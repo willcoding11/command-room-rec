@@ -61,12 +61,35 @@ from PowerShell:
 wsl -d ForemanBox -- bash /home/agent/share/crrec/repo/render/render.sh /home/agent/share/commandroom-v1-2026-11-24-1532.zip
 ```
 
-That writes `...-head.mp4` (player's view, smoothed) and `...-chase.mp4` (behind the player's ship) next to the zip,
-1920x1080 60 fps H.264 with the game audio. Options (`node render/render.mjs --help`):
+That writes `...-director.mp4` next to the zip: 1920x1080 60 fps H.264 with the game audio, cut like a trailer.
+
+**Director mode (default).** The whole log is read first, so the edit can look ahead. A hard cut lands every 2-4 s
+(varied), and the camera moves smoothly with easing inside each shot. World up is always screen up: zero roll, and
+pitch stays within +-35 deg. Shot types, never the same type twice in a row:
+
+- wide establishing (locked)
+- locked-off static next to the action
+- damped follow
+- close-up (ship about 1/3 of the frame)
+- slow orbit / push-in round a fight
+- flyby (still camera, ship passes close)
+
+Subjects are picked by action. An upcoming kill gets a shot that starts just before it, with the explosion landing
+55-70 % into the shot; otherwise the player's ship, its nearest enemy or another live ship. Each shot is chosen from
+about 10 candidate cameras, scored on:
+
+- the subject in frame and not hidden behind a star
+- no star or rock filling the foreground
+- the camera not outside the battle room
+
+`--seed N` gives a different edit; ui/hands default off.
+
+Options (`node render/render.mjs --help`):
 
 ```
---mode head|wide|chase   --res 1080|1440|4k|WxH   --fps 60   --from S --to S
---ui on|off  --hands on|off      (defaults: on for head/wide, off for chase)
+--mode director|head|wide|chase   --res 1080|1440|4k|WxH   --fps 60   --from S --to S   --seed N
+--ui on|off  --hands on|off      (defaults: on for head/wide, off for director/chase)
+--every N  (preview: render every Nth frame)
 --linewidth PX (1.6 at 1080p, scales with resolution; 0 = thin native lines)
 --fov DEG  --smooth SEC  --target NAME|ID  --dist N --height N  --cam x,y,z --look x,y,z
 --still SEC --out shot.png  (one frame)  --crf 16  --no-audio

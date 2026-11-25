@@ -4,15 +4,17 @@ import * as THREE from 'three';
 import { LineSegments2 } from '../vendor/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from '../vendor/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from '../vendor/lines/LineMaterial.js';
+import { buildDirector } from './director.js';
 
 const Q = new URLSearchParams(location.search);
 const OPT = {
-  rec: Q.get('rec') || '/rec/', mode: Q.get('mode') || 'head', W: +(Q.get('w') || 1920), H: +(Q.get('h') || 1080),
+  rec: Q.get('rec') || '/rec/', mode: Q.get('mode') || 'director', seed: +(Q.get('seed') || 7), W: +(Q.get('w') || 1920), H: +(Q.get('h') || 1080),
   fps: +(Q.get('fps') || 60), from: +(Q.get('from') || 0), to: Q.has('to') ? +Q.get('to') : null,
   ui: Q.get('ui') !== '0', hands: Q.get('hands') !== '0', target: Q.get('target') || 'player-ship',
   lw: Q.has('lw') ? +Q.get('lw') : 1.6, fov: Q.has('fov') ? +Q.get('fov') : null, smooth: Q.has('smooth') ? +Q.get('smooth') : 0.12,
   cam: Q.get('cam') ? Q.get('cam').split(',').map(Number) : null, look: Q.get('look') ? Q.get('look').split(',').map(Number) : null,
-  fog: Q.get('fog') !== '0', dry: Q.get('dry') === '1', still: Q.has('still') ? +Q.get('still') : null,
+  // Fog belongs to the player's view; cameras outside the room would see everything fogged out.
+  fog: Q.has('fog') ? Q.get('fog') !== '0' : (Q.get('mode') || 'director') === 'head', dry: Q.get('dry') === '1', still: Q.has('still') ? +Q.get('still') : null,
   chaseDist: +(Q.get('dist') || 3.2), chaseHeight: +(Q.get('height') || 0.9),
 };
 const post = (path, body) => fetch(path, { method: 'POST', body });
@@ -433,9 +435,12 @@ function wideShot() {
   return { pos: OPT.cam ? new THREE.Vector3(...OPT.cam) : pos, look: OPT.look ? new THREE.Vector3(...OPT.look) : c };
 }
 const WIDE = OPT.mode === 'wide' ? wideShot() : null;
+const DIRECTOR = OPT.mode === 'director' ? buildDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H }) : null;
 const _sp = new THREE.Vector3(), _sq = new THREE.Quaternion(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _want = new THREE.Vector3(), _lk = new THREE.Vector3();
 function placeCamera(t, dt) {
-  if (OPT.mode === 'head') {
+  if (DIRECTOR) {
+    DIRECTOR.update(camera, t, dt);
+  } else if (OPT.mode === 'head') {
     sampleTrack(headTrack, t, camera.position, camera.quaternion);
     camera.fov = OPT.fov || 75; camera.near = 0.02; camera.far = 1000;
   } else if (OPT.mode === 'wide') {
@@ -460,6 +465,7 @@ function placeCamera(t, dt) {
 
 // ---------------------------------------------------------------- render loop
 const pixels = new Uint8Array(OPT.W * OPT.H * 4);
+const EVERY = Math.max(1, +(Q.get('every') || 1));
 const nOut = Math.max(1, Math.floor((to - from) * OPT.fps) + 1);
 log(`START ${nOut} frames`);
 const tStart = performance.now();
@@ -473,6 +479,7 @@ for (let i = 0; i < nOut; i++) {
   await advanceTo(t);
   poseNodes(t);
   placeCamera(t, 1 / OPT.fps);
+  if (EVERY > 1 && i % EVERY) continue;     // preview: simulate every frame, render every Nth
   renderer.render(scene, camera);
   if (!OPT.dry) {
     gl.readPixels(0, 0, OPT.W, OPT.H, gl.RGBA, gl.UNSIGNED_BYTE, pixels);

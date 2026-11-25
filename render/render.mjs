@@ -2,13 +2,15 @@
 // COMMAND ROOM offline renderer: recording zip -> MP4 (H.264 + AAC game audio).
 //
 //   node render/render.mjs <recording.zip> [options]
-//     --mode head|wide|chase   camera (default head). head = the player's view, smoothed.
+//     --mode director|head|wide|chase   camera (default director: an edited sequence of cuts every 2-4 s -
+//                              wide / locked-off / follow / close-up / orbit / flyby, picked by the action).
+//                              head = the player's view, smoothed. --seed N picks a different edit.
 //     --out file.mp4           (default: next to the zip, <zip>-<mode>.mp4)
 //     --res 1080|1440|4k|WxH   (default 1080 = 1920x1080)
 //     --fps 60                 output frame rate (log is ~36-45 Hz, transforms are interpolated)
 //     --from S --to S          seconds into the recording (default: everything)
-//     --ui on|off              panels, ring, tutorial card, wrist HUD, popups, laser cursor (default: on, off for chase)
-//     --hands on|off           controller models (default: on, off for chase)
+//     --ui on|off              panels, ring, tutorial card, wrist HUD, popups, laser cursor (default: on for head/wide)
+//     --hands on|off           controller models (default: on for head/wide)
 //     --linewidth PX           wireframe line width in px at 1080p (default 1.6; 0 = native 1 px GL lines)
 //     --fov DEG                vertical field of view (head 75, wide 60, chase 65)
 //     --smooth SEC             head-pose smoothing sigma (default 0.12; 0 = raw)
@@ -19,6 +21,8 @@
 //     --still SEC              render one PNG at that time instead of a video (--out shot.png)
 //     --no-audio               skip the audio track
 //     --display :N             use an existing X display instead of headless Firefox
+//     --every N                quick preview: render only every Nth frame (director edit is unchanged)
+//     --dbg 1                  log the director's ship / obstacle classification
 import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -29,9 +33,9 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
-if (!argv.length || argv[0] === '--help') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(1, 24).join('\n')); process.exit(0); }
+if (!argv.length || argv[0] === '--help') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).join('\n')); process.exit(0); }
 const zipPath = path.resolve(argv[0]);
-const opt = { mode: 'head', res: '1080', fps: '60', crf: '16' };
+const opt = { mode: 'director', res: '1080', fps: '60', crf: '16' };
 for (let i = 1; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--no-audio') { opt.noAudio = true; continue; }
@@ -40,8 +44,8 @@ for (let i = 1; i < argv.length; i++) {
 }
 const RES = { 720: [1280, 720], 1080: [1920, 1080], 1440: [2560, 1440], '4k': [3840, 2160], '2160': [3840, 2160] };
 const [W, H] = RES[opt.res] || opt.res.split('x').map(Number);
-const chase = opt.mode === 'chase';
-const ui = opt.ui ? opt.ui === 'on' : !chase, hands = opt.hands ? opt.hands === 'on' : !chase;
+const inside = opt.mode === 'head' || opt.mode === 'wide';     // UI is only readable from the player's seat
+const ui = opt.ui ? opt.ui === 'on' : inside, hands = opt.hands ? opt.hands === 'on' : inside;
 const still = opt.still !== undefined;
 const out = path.resolve(opt.out || zipPath.replace(/\.zip$/i, '') + `-${opt.mode}${still ? '.png' : '.mp4'}`);
 
@@ -77,7 +81,7 @@ const tmpVideo = path.join(work, 'video.mp4');
 let ff = null, ffDone = null;
 if (!still) {
   const vf = ['vflip'];
-  ff = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', opt.fps, '-i', '-',
+  ff = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(+opt.fps / (+opt.every || 1)), '-i', '-',
     '-vf', vf.join(','), '-c:v', 'libx264', '-preset', 'medium', '-crf', opt.crf, '-pix_fmt', 'yuv420p', '-movflags', '+faststart', tmpVideo], { stdio: ['pipe', 'inherit', 'inherit'] });
   ffDone = new Promise((res) => ff.on('close', res));
 }
@@ -123,7 +127,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
 const q = new URLSearchParams({ mode: opt.mode, w: W, h: H, fps: opt.fps, from, ui: ui ? 1 : 0, hands: hands ? 1 : 0 });
-for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog']) if (opt[k] !== undefined) q.set(k, opt[k]);
+for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog', 'seed', 'every', 'dbg']) if (opt[k] !== undefined) q.set(k, opt[k]);
 if (opt.linewidth !== undefined) q.set('lw', opt.linewidth);
 const url = `http://127.0.0.1:${port}/page/index.html?${q}`;
 
