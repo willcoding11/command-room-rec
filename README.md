@@ -63,7 +63,7 @@ wsl -d ForemanBox -- bash /home/agent/share/crrec/repo/render/render.sh /home/ag
 
 That writes `...-wide-director.mp4` next to the zip: 1920x1080 60 fps H.264 with the game audio.
 
-**Wide director (default, `--mode wide-director`).** Always shows the whole battle area, never a close-up. The
+**Wide director (default, `--mode wide-director`).** Keeps the battle area in view, never a close-up. The
 battle room's own wireframe box is found in the log and framed by its 8 real corners, so a resized or reshaped room
 stays in frame. If there's no room (v1's open arena) or it's hidden, it frames a robust box round the ships. Hard cuts
 land every 2-4 s, never the same type twice. World up is screen up (zero roll, pitch within +-35 deg). Shot types:
@@ -74,7 +74,10 @@ land every 2-4 s, never the same type twice. World up is screen up (zero roll, p
 - wide follow: trails the fight cluster from outside it, never nearer than 65 % of the full-room distance
 - the player's head view, smoothed with roll removed, used only when they are looking into the room
 
-The lenses are long (32-40 deg) from further back, so the box fills the frame evenly. Ships are drawn with thicker
+**Framing (`--frame`).** The default, `medium`, puts the camera halfway, in distance, between fitting the whole room
+and fitting the fight (the core of the ship positions during the shot), with the aim moved toward the fight. It's
+never nearer than 35 % of the room distance. `--frame room` frames the whole box; `--frame fight` or a number 0..1
+goes tighter or looser. The lenses are long (32-40 deg) from further back, so the box fills the frame evenly. Ships are drawn with thicker
 lines (`--lwship 2.6` px) and a little brighter (`--boost 1.2`), so they read at full-room framing. ui/hands default off.
 
 **Director (`--mode director`).** The tighter trailer cut. The whole log is read first, so the edit can look ahead. A hard cut lands every 2-4 s
@@ -103,6 +106,7 @@ Options (`node render/render.mjs --help`):
 ```
 --mode wide-director|director|head|wide|chase   --res 1080|1440|4k|WxH   --fps 60   --from S --to S   --seed N
 --ui on|off  --hands on|off      (defaults: on for head/wide, off for the directors and chase)
+--frame medium|room|fight|0..1   (wide-director framing, default medium)
 --lwship PX --boost K            (ship line width / brightness; wide-director 2.6 / 1.2)
 --every N  (preview: render every Nth frame)
 --linewidth PX (1.6 at 1080p, scales with resolution; 0 = thin native lines)

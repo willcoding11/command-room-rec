@@ -42,7 +42,9 @@ export function shipInfo(defs) {
   return { shipIds, matIds, roomIds };
 }
 
-export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, seed = 7, aspect = 16 / 9, headAt, shipIds, roomIds = new Set() }) {
+// tight: 0 = whole-room framing, 0.5 = medium (default: halfway, in distance, between the room and the fight),
+// 1 = frame the fight itself. Never nearer than 35 % of the whole-room distance.
+export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, seed = 7, aspect = 16 / 9, headAt, shipIds, roomIds = new Set(), tight = 0.5 }) {
   const rng = rngFrom(seed);
   const rr = (a, b) => a + rng() * (b - a);
 
@@ -68,15 +70,15 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
   }
   const headP = (t) => headAt(t).p;
   // Robust battle-area box for [t0, t1]: 4th-96th percentile per axis of the ship positions.
-  function areaBox(t0, t1, pad = 1.5) {
+  function areaBox(t0, t1, pad = 1.5, q = 0.04, m = 0.18) {
     const pts = [];
     for (let i = Math.max(0, Math.floor((t0 - pad) / BIN)); i <= Math.min(nb - 1, Math.floor((t1 + pad) / BIN)); i++) for (const p of bins[i]) pts.push(p);
     if (pts.length < 6) return null;
     const lo = [], hi = [];
-    for (let a = 0; a < 3; a++) { const v = pts.map((p) => p[a]).sort((x, y) => x - y); lo.push(v[Math.floor(v.length * 0.04)]); hi.push(v[Math.min(v.length - 1, Math.floor(v.length * 0.96))]); }
+    for (let a = 0; a < 3; a++) { const v = pts.map((p) => p[a]).sort((x, y) => x - y); lo.push(v[Math.floor(v.length * q)]); hi.push(v[Math.min(v.length - 1, Math.floor(v.length * (1 - q)))]); }
     const box = new THREE.Box3(new THREE.Vector3(...lo), new THREE.Vector3(...hi));
     const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
-    const m = 0.18;   // never frame tighter than ~18 cm (a lone ship would otherwise fill the frame)
+    // m: never frame tighter than this (a lone ship would otherwise fill the frame)
     box.setFromCenterAndSize(c, new THREE.Vector3(Math.max(s.x, m), Math.max(s.y, m * 0.6), Math.max(s.z, m)));
     return { box, c: box.getCenter(new THREE.Vector3()), R: box.getSize(new THREE.Vector3()).length() / 2, n: pts.length };
   }
@@ -137,15 +139,23 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
 
   function propose(type, t0, t1) {
     const A = area(t0, t1); A.t0 = t0; A.t1 = t1;
-    const shot = { type, t0, t1, c: A.c.clone(), R: A.R, room: !!A.room };
+    // The fight: core 76 % of the ship positions over the shot (+-0.5 s).
+    const Act = tight > 0 ? (areaBox(t0, t1, 0.5, 0.12, 0.12) || A) : A;
+    const shot = { type, t0, t1, c: A.c.clone().lerp(Act.c, Math.min(1, tight * 1.4)), R: A.R, room: !!A.room };
+    const fitMix = (az, el, fov, mx, my) => {
+      const dr = fitBox(A, az, el, fov, mx, my);
+      if (!tight) return dr;
+      const da = fitBox(Act, az, el, fov, mx, my);
+      return Math.max(Math.pow(dr, 1 - tight) * Math.pow(da, tight), 0.35 * dr);
+    };
     // Mostly from the player's side of the room (so screen-left/right matches what they saw), sometimes the flank.
     const az0 = seatAz(A) + (rng() < 0.7 ? rr(-55, 55) : (rng() < 0.5 ? -1 : 1) * rr(70, 120)) * DEG;
     switch (type) {
       // Longer lenses from further back: the box fills the frame evenly instead of the near corners ballooning.
-      case 'static': shot.fov = rr(32, 40); shot.el = rr(9, 24) * DEG; shot.az = az0; shot.d = fitBox(A, shot.az, shot.el, shot.fov); break;
+      case 'static': shot.fov = rr(32, 40); shot.el = rr(9, 24) * DEG; shot.az = az0; shot.d = fitMix(shot.az, shot.el, shot.fov); break;
       case 'orbit': {
         shot.fov = rr(32, 38); shot.el = rr(8, 20) * DEG; shot.az = az0; shot.sweep = (rng() < 0.5 ? -1 : 1) * rr(12, 24) * DEG;
-        let d = 0; for (let k = 0; k <= 4; k++) d = Math.max(d, fitBox(A, shot.az + shot.sweep * k / 4, shot.el, shot.fov)); shot.d = d;
+        let d = 0; for (let k = 0; k <= 4; k++) d = Math.max(d, fitMix(shot.az + shot.sweep * k / 4, shot.el, shot.fov)); shot.d = d;
         break;
       }
       case 'drift': {
@@ -154,7 +164,7 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
         shot.truck = (rng() < 0.5 ? -1 : 1) * rr(0.05, 0.1) * A.R;      // sideways slide (camera and aim together)
         shot.rise = rr(-0.03, 0.05) * A.R;
         // fitted at the drift's tightest point (pushed in, slid to one end) so the room is never cropped
-        shot.d = fitBox(A, shot.az, shot.el, shot.fov, 0.86, 0.84) / (1 + Math.min(0, shot.push)) + Math.abs(shot.truck) * 1.2;
+        shot.d = fitMix(shot.az, shot.el, shot.fov, 0.86, 0.84) / (1 + Math.min(0, shot.push)) + Math.abs(shot.truck) * 1.2;
         break;
       }
       case 'follow': {
@@ -164,7 +174,7 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
         const S = areaBox(t0, t1, 0.5) || A;
         const Sx = { box: S.box, c: S.c, R: S.R };
         // never a close-up: at least 65 % of the distance that frames the whole room
-        shot.d = Math.max(fitBox(Sx, shot.az, shot.el, shot.fov, 0.85, 0.8), S.R * 1.6, 0.65 * fitBox(A, shot.az, shot.el, shot.fov));
+        shot.d = Math.max(fitBox(Sx, shot.az, shot.el, shot.fov, 0.85, 0.8) * (1 - 0.3 * tight), S.R * 1.3, (0.65 - 0.3 * tight) * fitBox(A, shot.az, shot.el, shot.fov));
         const cs = []; for (let k = 0; k <= 24; k++) { const tt = t0 + (t1 - t0) * k / 24; cs.push(centroid(tt) || S.c.clone()); }
         for (let i = 1; i < cs.length; i++) cs[i] = cs[i - 1].clone().lerp(cs[i], 0.3);
         shot.path = cs.map((p) => p.lerp(S.c, 0.4));
@@ -221,7 +231,7 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
     shots.push(propose(type, t, t + len));
     prev = type; t += len;
   }
-  log(`wide-director: room frame ${roomIds.size ? 'found (' + [...roomIds].join(',') + ')' : 'not found - framing the ships'}, ${room.length} room poses`);
+  log(`wide-director: framing ${tight === 0 ? 'room' : tight === 0.5 ? 'medium' : 'tight=' + tight}; room frame ${roomIds.size ? 'found (' + [...roomIds].join(',') + ')' : 'not found - framing the ships'}, ${room.length} room poses`);
   log('wide-director shots: ' + shots.map((s) => `${s.t0.toFixed(1)} ${s.type}${s.R ? ' R' + s.R.toFixed(2) + (s.room ? 'r' : '') : ''}`).join(' | '));
 
   // ---------------------------------------------------------------- per frame

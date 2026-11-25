@@ -8,6 +8,8 @@
 //                              (roll removed); cuts every 2-4 s, no close-ups; ships drawn thicker and brighter.
 //                              director = the tighter trailer cut (close-ups, flybys, kill lookahead).
 //                              head = the player's view, smoothed. --seed N picks a different edit.
+//     --frame medium|room|fight|0..1  wide-director framing (default medium: halfway between the whole room
+//                              and the fight, never nearer than 35 % of the room distance; room = whole box)
 //     --lwship PX --boost K    ship line width / brightness (wide-director: 2.6 px, x1.2)
 //     --out file.mp4           (default: next to the zip, <zip>-<mode>.mp4)
 //     --res 1080|1440|4k|WxH   (default 1080 = 1920x1080)
@@ -131,7 +133,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
 const q = new URLSearchParams({ mode: opt.mode, w: W, h: H, fps: opt.fps, from, ui: ui ? 1 : 0, hands: hands ? 1 : 0 });
-for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog', 'seed', 'every', 'dbg', 'lwship', 'boost']) if (opt[k] !== undefined) q.set(k, opt[k]);
+for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog', 'seed', 'every', 'dbg', 'lwship', 'boost', 'frame']) if (opt[k] !== undefined) q.set(k, opt[k]);
 if (opt.linewidth !== undefined) q.set('lw', opt.linewidth);
 const url = `http://127.0.0.1:${port}/page/index.html?${q}`;
 

@@ -443,6 +443,7 @@ function wideShot() {
 const WIDE = OPT.mode === 'wide' ? wideShot() : null;
 const DIRECTOR = OPT.mode === 'director' ? buildDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H })
   : OPT.mode === 'wide-director' ? buildWideDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H, shipIds: SHIPS.shipIds, roomIds: SHIPS.roomIds,
+    tight: Q.get('frame') === 'room' ? 0 : Q.get('frame') === 'fight' ? 1 : Q.has('frame') && !isNaN(+Q.get('frame')) ? +Q.get('frame') : 0.5,
     headAt: (t) => { const p = new THREE.Vector3(), q = new THREE.Quaternion(); sampleTrack(headTrack, t, p, q); return { p, q }; } })
   : null;
 const _sp = new THREE.Vector3(), _sq = new THREE.Quaternion(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _want = new THREE.Vector3(), _lk = new THREE.Vector3();

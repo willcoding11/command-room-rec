@@ -183,12 +183,17 @@ const runs = [];
   for (const m of msgs) {
     // The message is title+subtitle run together ("ROUND 5" + "10 hostiles inbound" = "ROUND 510 hostiles"),
     // so round numbers come only from "ROUND n CLEARED" and "Reached round n".
-    const tx = m.text.toUpperCase();
+    // v1/v2 say WAVE, later builds ROUND.
+    const tx = m.text.toUpperCase().replace(/\bWAVE\b/g, 'ROUND');
+    const opener = /^ROUND 1\d* ?HOSTILES/.test(tx);
+    // A new "round 1" while a run is open and past round 1 = the player left to the lobby and started again.
+    if (cur && opener && cur.rounds < 9 && (cur.rounds > 1 || m.t - cur.from > 20)) { cur.to = m.t; cur.end = 'left to lobby (no end message)'; runs.push(cur); cur = null; }
     if (!cur && /^ROUND \d+ ?\d* ?HOSTILES/.test(tx)) { cur = { from: m.t, to: null, mode: null, rounds: 1, end: null, notes: [] }; continue; }
     if (!cur) continue;
     const r = tx.match(/^ROUND (\d+) CLEARED/); if (r) cur.rounds = Math.max(cur.rounds, +r[1] + 1);
-    const rr = tx.match(/REACHED ROUND (\d+)/); if (rr) cur.rounds = +rr[1];
+    const rr = tx.match(/REACHED ROUND (\d+)/) || tx.match(/SCORE [\d,]+ +ROUND (\d+)/); if (rr) cur.rounds = +rr[1];
     if (/SQUADRON|FORMATION|WINGMAN/.test(tx)) cur.mode = cur.mode || 'squadron';
+    if (/BOX RESET/.test(tx)) cur.notes.push(`${m.t}s BOX RESET`);
     if (/OUTPOST|ENDLESS|LANDED|LAUNCH/.test(tx)) cur.mode = cur.mode || 'endless';
     if (/ACE DOWN|LEADER DOWN|ESCAPED|WINGMAN DOWN|SPLIT/.test(tx)) cur.notes.push(`${m.t}s ${tx.split(/[^A-Z0-9 !]/)[0].trim()}`);
     if (/SHIP DESTROYED|SQUADRON LOST|FLEET LOST|RUN OVER|GAME OVER/.test(tx)) {
@@ -199,7 +204,9 @@ const runs = [];
     }
   }
   if (cur) { cur.to = +dur.toFixed(1); cur.end = cur.end || 'recording ended'; runs.push(cur); }
-  for (const r of runs) { r.mode = r.mode || 'fighter'; r.kills = evs.filter((e) => e.type === 'kill' && e.t >= r.from && e.t <= r.to + 1).length; }
+  for (const r of runs) {
+    // no telling message: 3+ cyan ships flying together = squadron
+    if (!r.mode) { const cy = secs.filter((x) => x.s >= r.from && x.s <= r.to).map((x) => x.cyan).sort((a, b) => a - b); r.mode = cy.length && cy[Math.floor(cy.length * 0.5)] >= 3 ? 'squadron' : 'fighter'; } r.kills = evs.filter((e) => e.type === 'kill' && e.t >= r.from && e.t <= r.to + 1).length; }
 }
 const kinds = {}; for (const d of defs) kinds[d.k] = (kinds[d.k] || 0) + 1;
 const out = {
