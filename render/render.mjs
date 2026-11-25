@@ -2,9 +2,13 @@
 // COMMAND ROOM offline renderer: recording zip -> MP4 (H.264 + AAC game audio).
 //
 //   node render/render.mjs <recording.zip> [options]
-//     --mode director|head|wide|chase   camera (default director: an edited sequence of cuts every 2-4 s -
-//                              wide / locked-off / follow / close-up / orbit / flyby, picked by the action).
+//     --mode wide-director|director|head|wide|chase
+//                              camera. Default wide-director: an edit that always shows the whole battle area -
+//                              wide statics, slow wide orbits / drifts, wide follow, and the player's head view
+//                              (roll removed); cuts every 2-4 s, no close-ups; ships drawn thicker and brighter.
+//                              director = the tighter trailer cut (close-ups, flybys, kill lookahead).
 //                              head = the player's view, smoothed. --seed N picks a different edit.
+//     --lwship PX --boost K    ship line width / brightness (wide-director: 2.6 px, x1.2)
 //     --out file.mp4           (default: next to the zip, <zip>-<mode>.mp4)
 //     --res 1080|1440|4k|WxH   (default 1080 = 1920x1080)
 //     --fps 60                 output frame rate (log is ~36-45 Hz, transforms are interpolated)
@@ -35,7 +39,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
 if (!argv.length || argv[0] === '--help') { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).join('\n')); process.exit(0); }
 const zipPath = path.resolve(argv[0]);
-const opt = { mode: 'director', res: '1080', fps: '60', crf: '16' };
+const opt = { mode: 'wide-director', res: '1080', fps: '60', crf: '16' };
 for (let i = 1; i < argv.length; i++) {
   const a = argv[i];
   if (a === '--no-audio') { opt.noAudio = true; continue; }
@@ -127,7 +131,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
 const q = new URLSearchParams({ mode: opt.mode, w: W, h: H, fps: opt.fps, from, ui: ui ? 1 : 0, hands: hands ? 1 : 0 });
-for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog', 'seed', 'every', 'dbg']) if (opt[k] !== undefined) q.set(k, opt[k]);
+for (const k of ['to', 'target', 'fov', 'smooth', 'cam', 'look', 'dist', 'height', 'still', 'fog', 'seed', 'every', 'dbg', 'lwship', 'boost']) if (opt[k] !== undefined) q.set(k, opt[k]);
 if (opt.linewidth !== undefined) q.set('lw', opt.linewidth);
 const url = `http://127.0.0.1:${port}/page/index.html?${q}`;
 

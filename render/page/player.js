@@ -5,16 +5,20 @@ import { LineSegments2 } from '../vendor/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from '../vendor/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from '../vendor/lines/LineMaterial.js';
 import { buildDirector } from './director.js';
+import { buildWideDirector, shipInfo } from './widedirector.js';
 
 const Q = new URLSearchParams(location.search);
+const MODE = Q.get('mode') || 'wide-director';
 const OPT = {
-  rec: Q.get('rec') || '/rec/', mode: Q.get('mode') || 'director', seed: +(Q.get('seed') || 7), W: +(Q.get('w') || 1920), H: +(Q.get('h') || 1080),
+  rec: Q.get('rec') || '/rec/', mode: MODE,
+  // Ships drawn thicker and brighter in the wide edit so they read at full-room framing.
+  lwShip: Q.has('lwship') ? +Q.get('lwship') : (MODE === 'wide-director' ? 2.6 : null), boost: Q.has('boost') ? +Q.get('boost') : (MODE === 'wide-director' ? 1.2 : 1), seed: +(Q.get('seed') || 7), W: +(Q.get('w') || 1920), H: +(Q.get('h') || 1080),
   fps: +(Q.get('fps') || 60), from: +(Q.get('from') || 0), to: Q.has('to') ? +Q.get('to') : null,
   ui: Q.get('ui') !== '0', hands: Q.get('hands') !== '0', target: Q.get('target') || 'player-ship',
   lw: Q.has('lw') ? +Q.get('lw') : 1.6, fov: Q.has('fov') ? +Q.get('fov') : null, smooth: Q.has('smooth') ? +Q.get('smooth') : 0.12,
   cam: Q.get('cam') ? Q.get('cam').split(',').map(Number) : null, look: Q.get('look') ? Q.get('look').split(',').map(Number) : null,
   // Fog belongs to the player's view; cameras outside the room would see everything fogged out.
-  fog: Q.has('fog') ? Q.get('fog') !== '0' : (Q.get('mode') || 'director') === 'head', dry: Q.get('dry') === '1', still: Q.has('still') ? +Q.get('still') : null,
+  fog: Q.has('fog') ? Q.get('fog') !== '0' : MODE === 'head', dry: Q.get('dry') === '1', still: Q.has('still') ? +Q.get('still') : null,
   chaseDist: +(Q.get('dist') || 3.2), chaseHeight: +(Q.get('height') || 0.9),
 };
 const post = (path, body) => fetch(path, { method: 'POST', body });
@@ -34,6 +38,7 @@ if (dv.getUint32(0, true) !== 0x31465243) throw new Error('not a crrec frames.bi
 const ANAMES = [];
 for (const d of defs) if (d.k === 'aname') ANAMES[d.i] = d.n;
 const viewDef = defs.find((d) => d.k === 'view') || { fovY: 90, eyePx: [1832, 1920] };
+const SHIPS = shipInfo(defs);
 log(`loaded ${manifest.version} ${manifest.durationSec}s frames=${manifest.frames} defs=${defs.length} bin=${bin.byteLength}`);
 
 // ---------------------------------------------------------------- frame decoder
@@ -209,19 +214,20 @@ function defMat(d) {
   if (m.isPointsMaterial) { m.userData.baseSize = m.size; if (!m.sizeAttenuation) m.size *= pointScale; }
   if (!OPT.fog) m.fog = false;
   let e = mats.get(d.id);
-  if (!e) { e = { m, fat: null, users: new Set() }; mats.set(d.id, e); }
+  if (!e) { e = { id: d.id, ship: SHIPS.matIds.has(d.id), m, fat: null, users: new Set() }; mats.set(d.id, e); }
   else { const old = e.m; e.m = m; m.color && old.color && m.color.copy(old.color); m.opacity = old.opacity; }
   if (e.fat) syncFat(e);
   for (const n of e.users) assignMat(n);
 }
 function fatMat(e) {
-  if (!e.fat) e.fat = new LineMaterial({ worldUnits: false, linewidth: OPT.lw * lineScale, alphaToCoverage: false });
+  if (!e.fat) e.fat = new LineMaterial({ worldUnits: false, linewidth: (e.ship && OPT.lwShip ? OPT.lwShip : OPT.lw) * lineScale, alphaToCoverage: false });
   syncFat(e);
   return e.fat;
 }
+const boostOf = (e) => (e.ship ? OPT.boost : 1);
 function syncFat(e) {
   const f = e.fat, m = e.m;
-  f.color.copy(m.color || new THREE.Color(1, 1, 1)); f.opacity = m.opacity; f.transparent = m.transparent; f.blending = m.blending;
+  f.color.copy(m.color || new THREE.Color(1, 1, 1)).multiplyScalar(boostOf(e)); f.opacity = m.opacity; f.transparent = m.transparent; f.blending = m.blending;
   f.depthTest = m.depthTest; f.depthWrite = m.depthWrite; f.vertexColors = m.vertexColors; f.fog = m.fog;
   f.resolution.set(OPT.W, OPT.H);
   f.needsUpdate = true;
@@ -371,7 +377,7 @@ async function applyFrame(k) {
   for (const id of fr.shown) { const n = nodes.get(id); if (n) n.vis = true; }
   for (const id of fr.hidden) { const n = nodes.get(id); if (n) n.vis = false; }
   for (const [id, x] of fr.xf) { const n = nodes.get(id); if (n) n.base = x; }
-  for (const [id, r, g, b, o] of fr.md) { const e = mats.get(id); if (e) { if (e.m.color) e.m.color.setRGB(r, g, b); e.m.opacity = o; if (e.fat) { e.fat.color.setRGB(r, g, b); e.fat.opacity = o; } } }
+  for (const [id, r, g, b, o] of fr.md) { const e = mats.get(id); if (e) { if (e.m.color) e.m.color.setRGB(r, g, b); e.m.opacity = o; if (e.fat) { e.fat.color.setRGB(r, g, b).multiplyScalar(boostOf(e)); e.fat.opacity = o; } } }
 }
 async function advanceTo(t) {
   while (framePtr + 1 < frames.length && frames[framePtr + 1].t - T0 <= t) { framePtr++; await applyFrame(framePtr); }
@@ -435,7 +441,10 @@ function wideShot() {
   return { pos: OPT.cam ? new THREE.Vector3(...OPT.cam) : pos, look: OPT.look ? new THREE.Vector3(...OPT.look) : c };
 }
 const WIDE = OPT.mode === 'wide' ? wideShot() : null;
-const DIRECTOR = OPT.mode === 'director' ? buildDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H }) : null;
+const DIRECTOR = OPT.mode === 'director' ? buildDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H })
+  : OPT.mode === 'wide-director' ? buildWideDirector({ frames, readFrame, defs, T0, duration: to, log, seed: OPT.seed, aspect: OPT.W / OPT.H, shipIds: SHIPS.shipIds, roomIds: SHIPS.roomIds,
+    headAt: (t) => { const p = new THREE.Vector3(), q = new THREE.Quaternion(); sampleTrack(headTrack, t, p, q); return { p, q }; } })
+  : null;
 const _sp = new THREE.Vector3(), _sq = new THREE.Quaternion(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _want = new THREE.Vector3(), _lk = new THREE.Vector3();
 function placeCamera(t, dt) {
   if (DIRECTOR) {

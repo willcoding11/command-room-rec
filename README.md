@@ -61,9 +61,23 @@ from PowerShell:
 wsl -d ForemanBox -- bash /home/agent/share/crrec/repo/render/render.sh /home/agent/share/commandroom-v1-2026-11-24-1532.zip
 ```
 
-That writes `...-director.mp4` next to the zip: 1920x1080 60 fps H.264 with the game audio, cut like a trailer.
+That writes `...-wide-director.mp4` next to the zip: 1920x1080 60 fps H.264 with the game audio.
 
-**Director mode (default).** The whole log is read first, so the edit can look ahead. A hard cut lands every 2-4 s
+**Wide director (default, `--mode wide-director`).** Always shows the whole battle area, never a close-up. The
+battle room's own wireframe box is found in the log and framed by its 8 real corners, so a resized or reshaped room
+stays in frame. If there's no room (v1's open arena) or it's hidden, it frames a robust box round the ships. Hard cuts
+land every 2-4 s, never the same type twice. World up is screen up (zero roll, pitch within +-35 deg). Shot types:
+
+- wide static
+- slow wide orbit (12-24 deg)
+- slow drift / push (fitted at its tightest point, so the box is never cropped)
+- wide follow: trails the fight cluster from outside it, never nearer than 65 % of the full-room distance
+- the player's head view, smoothed with roll removed, used only when they are looking into the room
+
+The lenses are long (32-40 deg) from further back, so the box fills the frame evenly. Ships are drawn with thicker
+lines (`--lwship 2.6` px) and a little brighter (`--boost 1.2`), so they read at full-room framing. ui/hands default off.
+
+**Director (`--mode director`).** The tighter trailer cut. The whole log is read first, so the edit can look ahead. A hard cut lands every 2-4 s
 (varied), and the camera moves smoothly with easing inside each shot. World up is always screen up: zero roll, and
 pitch stays within +-35 deg. Shot types, never the same type twice in a row:
 
@@ -87,8 +101,9 @@ about 10 candidate cameras, scored on:
 Options (`node render/render.mjs --help`):
 
 ```
---mode director|head|wide|chase   --res 1080|1440|4k|WxH   --fps 60   --from S --to S   --seed N
---ui on|off  --hands on|off      (defaults: on for head/wide, off for director/chase)
+--mode wide-director|director|head|wide|chase   --res 1080|1440|4k|WxH   --fps 60   --from S --to S   --seed N
+--ui on|off  --hands on|off      (defaults: on for head/wide, off for the directors and chase)
+--lwship PX --boost K            (ship line width / brightness; wide-director 2.6 / 1.2)
 --every N  (preview: render every Nth frame)
 --linewidth PX (1.6 at 1080p, scales with resolution; 0 = thin native lines)
 --fov DEG  --smooth SEC  --target NAME|ID  --dist N --height N  --cam x,y,z --look x,y,z
@@ -96,6 +111,20 @@ Options (`node render/render.mjs --help`):
 ```
 
 Speed in the box (software GL): ~8 output frames/s at 1080p, so a 10-minute take at 60 fps is about 75 minutes.
+
+## Inspecting a recording
+
+`node tools/inspect.mjs <recording.zip> [--json out.json]` (needs ffprobe for the audio part). It checks:
+
+- the zip (CRC per entry) and that frames.bin parses to the end
+- the frame timing (rate, median / p95 / max frame gap, logging gaps)
+- the audio: codec, rate, length vs the scene log, level, decode errors
+
+It also reads the activity out of the log:
+
+- kills, wingmen lost and player deaths (ships hidden for good)
+- the runs, from the game's own messages (mode, rounds reached, how each run ended)
+- the best 8-second windows
 
 ## Known limits
 
