@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>COMMAND ROOM · Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 29 16 16 29 3 16Z' fill='none' stroke='%233fd0ff' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%233fd0ff'/%3E%3C/svg%3E">
+<script type="importmap">{ "imports": { "three": "../render/vendor/three.module.js" } }</script>
+</head>
+<body data-view="program">
+<header id="top">
+  <div class="brand"><span class="logo"></span><span>COMMAND ROOM</span><b>EDITOR</b></div>
+  <input id="projName" value="Untitled edit" spellcheck="false" data-tip="Project name (also the export file name)">
+  <span id="saveState" class="muted small"></span>
+  <div class="spacer"></div>
+  <button id="btnNew" data-tip="Start a new edit">New</button>
+  <button id="btnOpen" data-tip="Open a saved project">Open…</button>
+  <button id="btnSave" data-tip="Save the project to footage\projects (Ctrl+S)">Save</button>
+  <span class="sep"></span>
+  <button id="btnUndo" class="icon" data-tip="Undo (Ctrl+Z)">↶</button>
+  <button id="btnRedo" class="icon" data-tip="Redo (Ctrl+Y)">↷</button>
+  <button id="btnHelp" class="icon" data-tip="Project overview and keyboard shortcuts">?</button>
+  <button id="btnExport" class="primary" data-tip="Render the edit to an MP4 / WebM (Ctrl+E)">Export</button>
+</header>
+
+<main>
+  <aside id="left">
+    <div class="panel-h"><span>SESSIONS</span><span class="muted small">footage\raw</span></div>
+    <div id="sessions"></div>
+    <div id="drop" data-tip="Drop a recording zip anywhere on the editor">Drop a recording <b>.zip</b> to add it</div>
+    <div id="serverState" class="muted small"></div>
+    <div class="panel-h"><span>MUSIC</span><span class="muted small">the game's songs</span></div>
+    <div id="songs"></div>
+  </aside>
+
+  <section id="center">
+    <div id="viewerTabs">
+      <button data-view="source" data-tip="Preview a whole session and mark clips (Tab)">SOURCE</button>
+      <button data-view="program" data-tip="Your edit (Tab)">PROGRAM</button>
+      <div class="spacer"></div>
+      <div id="srcCam" class="seg mini">
+        <button data-cam="auto" class="on" data-tip="Preview with the auto-director">Auto</button>
+        <button data-cam="pov" data-tip="Preview from the player's eyes (with UI)">Player view</button>
+      </div>
+    </div>
+    <div id="viewport">
+      <div id="stage">
+        <canvas id="view"></canvas>
+        <div id="overlay">
+          <div class="ov-tl"><span id="ovMode" class="badge"></span><span id="ovLabel"></span></div>
+          <div class="ov-tr" id="ovTime">00:00.00</div>
+          <div id="ovCenter"></div>
+          <div class="ov-b" id="ovHint"></div>
+          <div id="pickRing"></div>
+        </div>
+        <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+      </div>
+    </div>
+    <div id="srcbar">
+      <div id="srcTrack" data-tip="Runs (cyan = Fighter, gold = Squadron), best moments (bright) and the game's messages (ticks). Click to seek."></div>
+      <div class="src-row">
+        <button id="btnIn" data-tip="Mark In (I)">⇤ In</button><span id="srcIn" class="tcv">--:--.--</span>
+        <button id="btnOut" data-tip="Mark Out (O)">Out ⇥</button><span id="srcOut" class="tcv">--:--.--</span>
+        <span id="srcDur" class="muted small"></span>
+        <div class="spacer"></div>
+        <span id="srcInfo" class="muted small"></span>
+        <button id="btnAdd" class="primary" data-tip="Add In→Out to the end of the timeline (Enter)">＋ Add to timeline</button>
+      </div>
+    </div>
+    <div id="transport">
+      <button id="btnStart" class="icon" data-tip="Previous cut (↑)">⏮</button>
+      <button id="btnRev" class="icon" data-tip="Play backwards (J, again = faster)">◀◀</button>
+      <button id="btnBack" class="icon" data-tip="Back one frame (←, Shift = 1 s)">◀|</button>
+      <button id="btnPlay" class="icon play" data-tip="Play / pause (Space)"><span class="p">▶</span><span class="s">❚❚</span></button>
+      <button id="btnFwd" class="icon" data-tip="Forward one frame (→, Shift = 1 s)">|▶</button>
+      <button id="btnFF" class="icon" data-tip="Play forwards (L, again = faster)">▶▶</button>
+      <button id="btnEnd" class="icon" data-tip="Next cut (↓)">⏭</button>
+      <div class="tc"><span id="tcNow">00:00.00</span><span class="muted"> / </span><span id="tcEnd" class="muted">00:00.00</span><span id="rate"></span></div>
+    </div>
+  </section>
+
+  <aside id="right">
+    <div class="panel-h"><span>INSPECTOR</span></div>
+    <div id="inspector"></div>
+  </aside>
+</main>
+
+<footer id="timeline">
+  <div class="tl-toolbar">
+    <button id="btnSplit" data-tip="Split the clip at the playhead (S)">✂ Split</button>
+    <button id="btnDel" data-tip="Delete the selected clip or song (Del)">Delete</button>
+    <div class="dd"><button id="btnMusic" data-tip="Add a song to the music lane at the playhead">♪ Add music ▾</button><div id="musicMenu" class="menu"></div></div>
+    <div class="spacer"></div>
+    <button id="btnSnap" class="on" data-tip="Snap songs to cuts and the playhead">Snap</button>
+    <button id="btnZoomOut" class="icon" data-tip="Zoom out (−, Ctrl+wheel)">−</button>
+    <button id="btnZoomIn" class="icon" data-tip="Zoom in (+, Ctrl+wheel)">+</button>
+    <button id="btnFit" data-tip="Fit the whole edit">Fit</button>
+  </div>
+  <div id="tlBody"></div>
+</footer>
+
+<div id="toast"></div>
+<div id="tip"></div>
+<div id="dropShade"><div>Drop the recording zip to add it to footage\raw</div></div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

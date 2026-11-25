@@ -130,6 +130,44 @@ It also reads the activity out of the log:
 - the runs, from the game's own messages (mode, rounds reached, how each run ended)
 - the best 8-second windows
 
+## Editor (cut your own edits)
+
+`editor/` is a local web app for making edits from the recordings in Chrome or Edge. Start it with
+`Chief\devlog\Open Editor.bat`, which runs `python editor/serve.py` and opens the browser. You can also start the server yourself:
+
+    python editor/serve.py --raw <footage/raw> --edits <footage/edits> --projects <footage/projects> [--sheets <footage/sheets>] --open
+
+The server listens on 127.0.0.1 only. It serves the editor plus the zips in `--raw`, saves exports to `--edits` and saves projects to
+`--projects`, and stops when its window is closed. The recordings never go into the repo or onto GitHub Pages. On Pages,
+`editor/` still opens, but only with drag-and-drop and downloads.
+
+- **Sessions** - every zip in footage\raw, with its length and runs (from the inspector JSON when there is one).
+  Dropping a zip onto the editor copies it into footage\raw.
+- **Source viewer** - preview a whole session with the auto-director or the player's view. The scrub bar shows runs,
+  best moments and the game's messages. Mark clips with I / O and add them with Enter.
+- **Timeline** - clips play back to back. Drag a clip to reorder it, drag an edge to trim, S splits at the playhead,
+  Del deletes. Clips from any session can share one edit. The music lane holds songs, which you move, trim and fade.
+  Undo / redo goes back 200 steps.
+- **Camera per clip**:
+  - Modes: Auto (the medium wide-director), Free (orbit / pan / zoom in the viewer), Follow (attached to the player ship,
+    any ship, the head or the room centre, with an offset you drag and optional chase mode), Look at, and Player view.
+  - Movement: Static, or Start → End keys with smooth or linear easing. Follow and Look at track their target with damping.
+  - Level horizon toggle (roll slider when it is off), and a field-of-view slider.
+- **Per clip** - UI panels, hands, bold ships and game-audio volume.
+- **Music** - the game's three songs (`editor/music/*.ogg`, seamless loops rendered from `6-command-room/js/music.js`
+  by `node editor/tools/render-music.mjs`).
+- **Export** - every frame is rendered and encoded in the browser with WebCodecs, using the vendored mp4-muxer /
+  webm-muxer, so the result is exact, not a realtime capture. Options: 1080p / 720p, 60 / 30 fps, MP4 (H.264 + AAC;
+  H.264 + Opus where the browser has no AAC encoder) or WebM (VP9 + Opus). Audio is the same mix as the preview.
+- **Save** - projects are JSON (`footage\projects\<name>.crproj.json`), and the current edit is also autosaved to localStorage.
+
+Audio: from v3 on, the game's music plays through the same output as the effects. The recorder taps that output,
+so **the recorded audio has the in-game music mixed into the SFX** and the two cannot be separated afterwards
+(v1 and v2 had no music). The editor offers a per-clip *Game audio* volume (plus "all clips: this volume") so a
+music track can sit on top. For future recordings, the fix is two stems: the recorder would also tap the game's
+`musicBus` and `sfxBus` (in `audio.js`) into separate MediaRecorders. That needs a small hook in the game, so it
+is not in the current recording builds.
+
 ## Known limits
 
 - Video is reconstructed, not captured: what you get is the 3D scene re-rendered (wireframes are drawn as clean
@@ -147,5 +185,6 @@ It also reads the activity out of the log:
 - `index.html` - version picker (generated). `versions.json` - picks, notes, shot lists.
 - `1-first/` ... `5-endless/` - the builds. `shared/recorder.js` - the recorder (copied into each build's `rec/`).
 - `render/` - offline renderer (`render.mjs` server + ffmpeg, `page/player.js` reconstruction in Firefox).
+- `editor/` - the editor (`index.html`, `js/`, `css/`, `music/`, `vendor/` muxers, `serve.py`, `tools/render-music.mjs`).
 - `tools/build.mjs` - rebuilds all snapshots: `node tools/build.mjs <path-to-vr-battle-room>`.
 - `test/` - IWER (WebXR emulator) driver + server used to verify record -> zip -> render.

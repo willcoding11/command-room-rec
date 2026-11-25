@@ -1,0 +1,17 @@
+[
+ {
+  "id": "lobby",
+  "file": "lobby.ogg",
+  "seconds": 128
+ },
+ {
+  "id": "battle-calm",
+  "file": "battle-calm.ogg",
+  "seconds": 120
+ },
+ {
+  "id": "battle-intense",
+  "file": "battle-intense.ogg",
+  "seconds": 120
+ }
+]

@@ -42,32 +42,48 @@ export function shipInfo(defs) {
   return { shipIds, matIds, roomIds };
 }
 
-// tight: 0 = whole-room framing, 0.5 = medium (default: halfway, in distance, between the room and the fight),
-// 1 = frame the fight itself. Never nearer than 35 % of the whole-room distance.
-export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, seed = 7, aspect = 16 / 9, headAt, shipIds, roomIds = new Set(), tight = 0.5 }) {
-  const rng = rngFrom(seed);
-  const rr = (a, b) => a + rng() * (b - a);
-
-  // ---------------------------------------------------------------- where the ships are (sampled ~10 Hz)
+// Where the ships are (sampled ~10 Hz into 0.5 s bins) and where the room frame is, from the parsed frames.
+// Incremental so a caller that already walks every frame (the editor's index pass) can feed it: add(fr, t), then
+// result(). buildWideDirector does the walk itself when it is not given a scan.
+export function shipScanner(duration, shipIds, roomIds = new Set()) {
   const BIN = 0.5, nb = Math.ceil(duration / BIN) + 2;
   const bins = Array.from({ length: nb }, () => []);
   const vis = new Set(), pos = new Map();
   let lastSample = -1;
-  const room = [];   // [t, visible, p, q, s] whenever the room frame changes
+  const room = [];   // [t, visible, pose] whenever the room frame changes
   let roomPose = null, roomVis = false;
-  for (const f of frames) {
-    const fr = readFrame(f.off, true), t = f.t - T0;
-    for (const id of fr.shown) vis.add(id);
-    for (const id of fr.hidden) vis.delete(id);
-    for (const [id, x] of fr.xf) { if (shipIds.has(id)) pos.set(id, x.p); if (roomIds.has(id)) roomPose = x; }
-    const rv = [...roomIds].some((id) => vis.has(id));
-    if (roomPose && (rv !== roomVis || !room.length || room[room.length - 1][2] !== roomPose)) { room.push([t, rv, roomPose]); }
-    roomVis = rv;
-    if (t - lastSample < 0.1) continue;
-    lastSample = t;
-    const b = bins[Math.min(nb - 1, Math.max(0, Math.floor(t / BIN)))];
-    for (const id of vis) { const p = pos.get(id); if (p) b.push(p); }
+  return {
+    add(fr, t) {
+      for (const id of fr.shown) vis.add(id);
+      for (const id of fr.hidden) vis.delete(id);
+      for (const [id, x] of fr.xf) { if (shipIds.has(id)) pos.set(id, x.p); if (roomIds.has(id)) roomPose = x; }
+      let rv = false; for (const id of roomIds) if (vis.has(id)) { rv = true; break; }
+      if (roomPose && (rv !== roomVis || !room.length || room[room.length - 1][2] !== roomPose)) { room.push([t, rv, roomPose]); }
+      roomVis = rv;
+      if (t - lastSample < 0.1) return;
+      lastSample = t;
+      const b = bins[Math.min(nb - 1, Math.max(0, Math.floor(t / BIN)))];
+      for (const id of vis) { const p = pos.get(id); if (p) b.push(p); }
+    },
+    result: () => ({ BIN, nb, bins, room }),
+  };
+}
+
+// tight: 0 = whole-room framing, 0.5 = medium (default: halfway, in distance, between the room and the fight),
+// 1 = frame the fight itself. Never nearer than 35 % of the whole-room distance.
+// start: first shot begins here (the editor builds one director per clip, from its in-point to `duration`).
+// scan: a finished shipScanner(...).result() covering the whole recording (skips the frame walk).
+export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, seed = 7, aspect = 16 / 9, headAt, shipIds, roomIds = new Set(), tight = 0.5, start = 0, scan = null }) {
+  const rng = rngFrom(seed);
+  const rr = (a, b) => a + rng() * (b - a);
+
+  // ---------------------------------------------------------------- where the ships are (sampled ~10 Hz)
+  if (!scan) {
+    const sc = shipScanner(duration, shipIds, roomIds);
+    for (const f of frames) sc.add(readFrame(f.off, true), f.t - T0);
+    scan = sc.result();
   }
+  const { BIN, nb, bins, room } = scan;
   const headP = (t) => headAt(t).p;
   // Robust battle-area box for [t0, t1]: 4th-96th percentile per axis of the ship positions.
   function areaBox(t0, t1, pad = 1.5, q = 0.04, m = 0.18) {
@@ -218,7 +234,7 @@ export function buildWideDirector({ frames, readFrame, defs, T0, duration, log, 
   const WEIGHT = { static: 1.1, orbit: 1.2, drift: 1, follow: 1.1, head: 0.7 };
   const TYPES = Object.keys(WEIGHT);
   const shots = [];
-  let t = 0, prev = null;
+  let t = start, prev = null;
   const pick = (types) => { let tot = 0; for (const x of types) tot += WEIGHT[x]; let r = rng() * tot; for (const x of types) { r -= WEIGHT[x]; if (r <= 0) return x; } return types[types.length - 1]; };
   while (t < duration - 0.3) {
     let len = rr(2, 4);
