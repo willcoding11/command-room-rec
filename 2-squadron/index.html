@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>COMMAND ROOM v2 (rec) - Tabletop battle box + Squadron mode</title>
+<script>
+// Test mode (?test): forward errors/logs to the local test server's /log endpoint.
+(function () {
+  if (!/[?&]test/.test(location.search)) return;
+  var send = function (k, m) { try { navigator.sendBeacon('log', k + ': ' + m); } catch (e) {} };
+  window.addEventListener('error', function (e) {
+    var t = e.target && (e.target.src || e.target.href);
+    send('ERROR', (e.message || '') + ' @' + (e.filename || '') + ':' + (e.lineno || '') + (t ? ' resource=' + t : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { send('REJECT', String(e.reason && (e.reason.stack || e.reason))); });
+  var ce = console.error.bind(console); console.error = function () { send('CONSOLE.ERROR', [].map.call(arguments, String).join(' ')); ce.apply(null, arguments); };
+  var cw = console.warn.bind(console); console.warn = function () { send('CONSOLE.WARN', [].map.call(arguments, String).join(' ')); cw.apply(null, arguments); };
+  window.__log = function (m) { send('INFO', m); };
+})();
+</script>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: monospace; color: #7fe9ff; }
+  #app canvas { display: block; }
+  #hud { position: fixed; left: 12px; bottom: 12px; width: 384px; height: 192px; pointer-events: none; }
+  body.in-vr #hud { display: none; }
+  #message { position: fixed; left: 0; right: 0; top: 22%; text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s; text-shadow: 0 0 12px #0af; }
+  #message.show { opacity: 1; }
+  #message .t { font-size: 48px; font-weight: bold; letter-spacing: 6px; }
+  #message .s { font-size: 18px; margin-top: 8px; white-space: pre-line; color: #bfefff; }
+  #flash { position: fixed; inset: 0; background: radial-gradient(ellipse at center, rgba(255,0,30,0) 40%, rgba(255,0,30,.6) 100%); opacity: 0; pointer-events: none; }
+  #title { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,8,.55); }
+  #title.hidden { display: none; }
+  #title .box { max-width: 640px; border: 1px solid #2aa9cc; padding: 24px 32px; background: rgba(0,10,22,.85); box-shadow: 0 0 30px #0af4; }
+  #title h1 { margin: 0 0 6px; letter-spacing: 10px; font-size: 40px; color: #9ff; }
+  #title p { color: #bfefff; line-height: 1.45; margin: 8px 0; font-size: 14px; }
+  #title td { padding: 2px 10px 2px 0; font-size: 14px; color: #bfefff; vertical-align: top; }
+  #title td:first-child { color: #ffcc66; white-space: nowrap; }
+  #startbtn, #startsq { margin-top: 14px; font: bold 18px monospace; padding: 10px 24px; background: #022; color: #9ff; border: 1px solid #3cf; cursor: pointer; }
+  #startbtn:hover, #startsq:hover { background: #044; }
+  #crosshint { position: fixed; right: 12px; top: 10px; font-size: 12px; color: #4a8fa3; pointer-events: none; text-align: right; }
+  body.in-vr #crosshint { display: none; }
+  #gear { position: fixed; left: 12px; top: 10px; font: bold 14px monospace; padding: 6px 12px; background: #022; color: #9ff; border: 1px solid #3cf; cursor: pointer; z-index: 5; }
+  body.in-vr #gear { display: none; }
+  #settings { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,10,22,.94); border: 1px solid #3cf; padding: 18px 24px; z-index: 6; box-shadow: 0 0 30px #0af4; }
+  #settings.hidden { display: none; }
+  #settings h2 { margin: 0 0 12px; letter-spacing: 6px; color: #9ff; }
+  #settings label { display: flex; justify-content: space-between; gap: 24px; margin: 8px 0; color: #bfefff; font-size: 15px; }
+  #settings select { font: 15px monospace; background: #012; color: #ffcc66; border: 1px solid #3cf; }
+  #settings button { margin-top: 10px; font: bold 15px monospace; padding: 6px 16px; background: #022; color: #9ff; border: 1px solid #3cf; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="hud" width="512" height="256"></canvas>
+<div id="message"><div class="t"></div><div class="s"></div></div>
+<div id="flash"></div>
+<div id="crosshint">mouse steers &middot; click shoots (Squadron: hold = engage) &middot; Shift boost &middot; N mode &middot; +/- box size &middot; Tab settings &middot; R restart</div>
+<button id="gear">&#9881; Settings (Tab)</button>
+<div id="settings" class="hidden">
+  <h2>SETTINGS</h2>
+  <div id="settings-rows"></div>
+  <button id="settings-close">Close (Tab)</button>
+</div>
+<div id="title">
+  <div class="box">
+    <h1>BATTLE ROOM</h1>
+    <p>A miniature battle in a box in front of you. Fly out of one side of the box and you come back in the opposite side. Two modes:</p>
+    <p><b>FIGHTER</b>: fly the cyan ship yourself and destroy the red waves. Enemies fight in groups: pincer pairs, flankers, snipers that hold range, heavies.<br>
+    <b>SQUADRON</b>: a much bigger, zoomed-out battlefield with big floating "stars" (cover). You command 4 bot fighters: your right controller sets the direction they head in, and they fly themselves.</p>
+    <table>
+      <tr><td>VR right hand</td><td><b>Mirror steering (default)</b>: the ship (or, in Squadron, the squadron's heading) turns with your right controller, with gain (Fighter 2x, Squadron 3x), in any direction, including loops. <b>Trigger: shoot</b> (Squadron: <b>hold = engage</b>: the bots spread out a little and attack; release = regroup) &middot; <b>grip: boost</b> (Squadron: only while not engaging) &middot; A brake &middot; <b>click the stick</b> to re-center &middot; on the title: <b>B switches mode</b>, trigger starts</td></tr>
+      <tr><td>VR left hand</td><td>Extras: trigger shoots &middot; grip boosts &middot; stick forward boost / back brake &middot; stick click resets the box &middot; <b>X+Y: settings</b> (mode, steering, gains, turn speed, box size) &middot; wrist shows score, hull / squadron status and radar</td></tr>
+      <tr><td>Desktop</td><td>The ship / squadron heading follows the mouse &middot; Left click / Space shoot (Squadron: hold to engage) &middot; Shift boost &middot; F brake &middot; N switch mode &middot; M cycles steering &middot; +/- box size &middot; C reset box &middot; right-drag or arrow keys look &middot; Tab settings &middot; R restart</td></tr>
+    </table>
+    <button id="startbtn">START FIGHTER</button> <button id="startsq" class="startb">START SQUADRON</button>
+    <p style="font-size:12px;color:#5fa9bf">On a Quest: press ENTER VR at the bottom of the page, then B picks the mode and the right trigger starts.</p>
+  </div>
+</div>
+<!-- recording build hooks -->
+<script>window.__CRREC = {"version":"v2","slug":"2-squadron","title":"Tabletop battle box + Squadron mode","date":"2026-11-22","commit":"954063d (v9)","shots":["Lean in close to the battle box and look at it from the side and from above (20 s).","Fighter mode, RIGHT TRIGGER to start: Mirror steering - fly a full loop and a tight turn.","Shoot down a full wave; boost with GRIP, brake with A.","Take hits until SHIP DESTROYED, then press B on the title to switch to SQUADRON.","Squadron: steer the squad with the right controller, HOLD TRIGGER to engage, release to regroup.","Fly the squad round a wireframe star so enemies lose sight of you.","Lose a wingman (WINGMAN DOWN), then keep playing to the end of a wave.","Left thumbstick click: reset the box in front of you once."],"index":"../"};</script>
+<script type="module" src="rec/recorder.js?b=mwvg40of"></script>
+<script type="module" src="js/main.js?v=9"></script>
+</body>
+</html>

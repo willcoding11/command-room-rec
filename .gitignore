@@ -1,0 +1,5 @@
+test-output/
+_src/
+node_modules/
+*.zip
+*.mp4

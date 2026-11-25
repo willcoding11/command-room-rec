@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COMMAND ROOM - recording builds</title>
+<style>
+body{margin:0;background:#02050c;color:#dfefff;font:17px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+main{max-width:980px;margin:0 auto;padding:22px 18px 60px}
+h1{letter-spacing:8px;color:#9ff;margin:6px 0 2px;font-size:34px}
+.lead{color:#9ab;margin:0 0 18px}
+.how{border:1px solid #ff4455;border-radius:10px;padding:10px 16px;background:#14060a;margin-bottom:20px}
+.how b{color:#ff8899}
+.v{border:1px solid #1d4a5e;border-radius:12px;padding:12px;margin:14px 0;background:#051522}
+.go{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;text-decoration:none;color:#fff;background:#063247;border:2px solid #3cf;border-radius:10px;padding:22px 20px;min-height:64px}
+.go:hover,.go:focus{background:#0a4a66}
+.n{font:bold 40px monospace;color:#7fe9ff;width:44px}
+.t{font-weight:bold;font-size:26px;flex:1;min-width:240px}
+.d{color:#9cc;font-size:15px;width:100%;padding-left:60px}
+.new{margin:10px 6px}
+details{margin:0 6px}
+summary{cursor:pointer;color:#ffcc66;font-weight:bold;padding:8px 0;font-size:18px}
+li{margin:4px 0}
+</style></head><body><main>
+<h1>COMMAND ROOM</h1>
+<p class="lead">Recording builds for the devlog: 5 snapshots from the first prototype to today (formerly VR Battle Room). Each one is the game exactly as it was, plus a recorder.</p>
+<div class="how"><b>How to record:</b> open a version, press ENTER VR. Recording starts automatically (untick it on the card to start by hand).
+In VR, click <b>both thumbsticks in and hold 1 second</b> to start / stop - a red REC badge shows lower left and the controllers buzz.
+Leaving VR stops and saves. Back on the page, press <b>DOWNLOAD RECORDING</b>: you get <code>commandroom-vN-date-time.zip</code> (scene log + game audio; never the mic).
+Recordings stay on the headset until you delete them. The video is re-rendered later from the log, at any resolution and from any camera.</div>
+
+<section class="v">
+  <a class="go" href="1-first/"><span class="n">1</span><span class="t">First playable prototype</span><span class="d">2026-11-21 &middot; first prototype &middot; ff79fa7</span></a>
+  <p class="new">Day one. You sit in the middle of a 360-degree wireframe battle. Point the right controller and the cyan ship flies there; red fighters and cruisers come in waves from every side. Score and radar on your left wrist.</p>
+  <details><summary>What to record (5-10 min)</summary><ol><li>Before starting: look slowly all the way round the empty arena - stars, the grid below, the horizon ring (20 s).</li><li>Pull the RIGHT TRIGGER to start. First flight: point the right controller and fly one slow lap around your head.</li><li>Shoot 3 enemies (trigger). Try to get one explosion close to your face.</li><li>Hold GRIP to boost across the arena, pull the stick back to brake.</li><li>Raise your left wrist and read the score and radar.</li><li>Fly straight into a cruiser on purpose / take hits until SHIP DESTROYED, then restart with the trigger.</li><li>Use the left stick to drift your viewpoint through the battle for a few seconds.</li><li>Play 2-3 more waves normally to finish the 5-10 minutes.</li></ol></details>
+</section>
+<section class="v">
+  <a class="go" href="2-squadron/"><span class="n">2</span><span class="t">Tabletop battle box + Squadron mode</span><span class="d">2026-11-22 &middot; v9 &middot; 954063d</span></a>
+  <p class="new">The battle moved onto a tabletop box in front of you, with Mirror steering (the ship points where your controller points, full loops, no pitch limit). New Squadron mode: command 4 bot fighters among wireframe stars. Smarter enemies in pincers, flankers and snipers.</p>
+  <details><summary>What to record (5-10 min)</summary><ol><li>Lean in close to the battle box and look at it from the side and from above (20 s).</li><li>Fighter mode, RIGHT TRIGGER to start: Mirror steering - fly a full loop and a tight turn.</li><li>Shoot down a full wave; boost with GRIP, brake with A.</li><li>Take hits until SHIP DESTROYED, then press B on the title to switch to SQUADRON.</li><li>Squadron: steer the squad with the right controller, HOLD TRIGGER to engage, release to regroup.</li><li>Fly the squad round a wireframe star so enemies lose sight of you.</li><li>Lose a wingman (WINGMAN DOWN), then keep playing to the end of a wave.</li><li>Left thumbstick click: reset the box in front of you once.</li></ol></details>
+</section>
+<section class="v">
+  <a class="go" href="3-lobby-music/"><span class="n">3</span><span class="t">Lobby, tutorial, music and juice</span><span class="d">2026-11-23 &middot; v18 &middot; 998082f</span></a>
+  <p class="new">A real game now: ENTER VR lands in a lobby with a live battle behind the menu, a step-by-step tutorial, procedural music and new sound effects. Explosions got sparks, flash rings and hit stop. Squadron can split into two pairs (one per hand) and change formation; enemies have leaders and aces; fighters can barrel-roll.</p>
+  <details><summary>What to record (5-10 min)</summary><ol><li>Lobby: let the music play and watch the live backdrop battle for 15 s, look at the panels.</li><li>Run the first few tutorial steps (move / resize the room, steering), then skip or finish it.</li><li>Fighter: start a game, do a wrist-flick barrel roll to dodge bullets.</li><li>Get a kill streak - show the spark bursts, flash rings and the hit-stop freeze.</li><li>Find an ACE (gold) and chase it down.</li><li>Squadron: left stick click to SPLIT into two pairs, steer one with each hand, press B to change formation.</li><li>Rejoin the squadron and finish a wave.</li><li>Back to the lobby: open settings, move the music and sound sliders.</li></ol></details>
+</section>
+<section class="v">
+  <a class="go" href="4-holo-ring/"><span class="n">4</span><span class="t">Command deck: holo ring, pointer UI, stats</span><span class="d">2026-11-24 &middot; v27 &middot; 4527bc5</span></a>
+  <p class="new">The menus became a command deck: a holographic ring above the battle room, laser-pointer UI with a cursor, Settings sliding in on the left, a new STATS panel on the right. The lobby backdrop follows the selected mode with a cross-fade. Thousands separators, screen-time stats, gentler panels.</p>
+  <details><summary>What to record (5-10 min)</summary><ol><li>Lobby: look up at the holo ring, sweep the laser pointer across the buttons so the cursor shows.</li><li>Switch modes Fighter &lt;-&gt; Squadron and let the backdrop cross-fade.</li><li>Open SETTINGS (slides in left) and STATS (slides in right), scroll through, close them.</li><li>Start Fighter: one full round, fly close to the ring edge so ships pass in front of it.</li><li>Start Squadron: split, formations, focus fire on a leader.</li><li>Lose on purpose and show the game-over score with thousands separators.</li><li>Grip-drag the room to make it bigger or move it, then play one more round.</li></ol></details>
+</section>
+<section class="v">
+  <a class="go" href="5-endless/"><span class="n">5</span><span class="t">Endless mode (current build)</span><span class="d">2026-11-24 &middot; v32 &middot; d104307</span></a>
+  <p class="new">Third mode, Endless: an open seeded galaxy around your ship. Enemy outposts are red stars, friendly ones green; destroy outposts (shockwave, collapse, big boom), land on cleared or green stars for upgrades, repair and new fighters, then launch again. Drifting asteroid fields, tiers rising with distance, no fleet cap.</p>
+  <details><summary>What to record (5-10 min)</summary><ol><li>Lobby: pick ENDLESS, watch the Endless preview behind the ring.</li><li>Start: fly out from the start, follow the long direction arrows to the first red star.</li><li>Destroy an enemy outpost - get the shockwave, flicker, collapse to grey and the big boom.</li><li>Fly a landing approach onto the cleared star; pick an upgrade on the popup, then LAUNCH.</li><li>Fly through a drifting asteroid field.</li><li>Buy extra fighters at a green star and fight with the bigger fleet; split it with left stick click.</li><li>Play until you lose ships for good, then compare with a quick Fighter round.</li></ol></details>
+</section>
+</main></body></html>

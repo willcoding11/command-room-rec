@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>COMMAND ROOM v5 (rec) - Endless mode (current build)</title>
+<script>
+// Test mode (?test): forward errors/logs to the local test server's /log endpoint.
+(function () {
+  if (!/[?&]test/.test(location.search)) return;
+  var send = function (k, m) { try { navigator.sendBeacon('log', k + ': ' + m); } catch (e) {} };
+  window.addEventListener('error', function (e) {
+    var t = e.target && (e.target.src || e.target.href);
+    send('ERROR', (e.message || '') + ' @' + (e.filename || '') + ':' + (e.lineno || '') + (t ? ' resource=' + t : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { send('REJECT', String(e.reason && (e.reason.stack || e.reason))); });
+  var ce = console.error.bind(console); console.error = function () { send('CONSOLE.ERROR', [].map.call(arguments, String).join(' ')); ce.apply(null, arguments); };
+  var cw = console.warn.bind(console); console.warn = function () { send('CONSOLE.WARN', [].map.call(arguments, String).join(' ')); cw.apply(null, arguments); };
+  window.__log = function (m) { send('INFO', m); };
+})();
+</script>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: monospace; color: #7fe9ff; }
+  #app canvas { display: block; }
+  #hud { position: fixed; left: 12px; bottom: 12px; width: 384px; height: 120px; pointer-events: none; }
+  body.in-vr #hud { display: none; }
+  /* Messages: a small panel next to the HUD (bottom-left), never over the middle of the battle. */
+  #message { position: fixed; left: 408px; bottom: 12px; width: 360px; box-sizing: border-box; padding: 10px 14px; text-align: left; pointer-events: none; opacity: 0; transition: opacity .25s; background: rgba(0,10,22,.62); border: 2px solid rgba(80,220,255,.7); text-shadow: 0 0 8px #0af; }
+  #message.show { opacity: 1; }
+  #message .t { font-size: 22px; font-weight: bold; letter-spacing: 3px; }
+  #message .s { font-size: 13px; margin-top: 4px; white-space: pre-line; color: #bfefff; }
+  body.in-vr #message { display: none; }
+  #flash { position: fixed; inset: 0; background: radial-gradient(ellipse at center, rgba(255,0,30,0) 40%, rgba(255,0,30,.6) 100%); opacity: 0; pointer-events: none; }
+  /* VR only: one big ENTER VR button over the lobby battle. */
+  #enter { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(0,0,8,.35) 0%, rgba(0,0,8,.8) 100%); }
+  body.in-vr #enter, body.demo #enter { display: none; }
+  #enter .box { text-align: center; border: 1px solid #2aa9cc; padding: 34px 48px 26px; background: rgba(0,10,22,.85); box-shadow: 0 0 30px #0af4; max-width: calc(100vw - 60px); box-sizing: border-box; }
+  #enter h1 { margin: 0 0 6px; letter-spacing: 12px; font-size: 44px; color: #9ff; }
+  #enter .tag { margin: 0 0 26px; color: #5fa9bf; font-size: 15px; letter-spacing: 2px; }
+  #vrbutton { font: bold 40px monospace; letter-spacing: 6px; padding: 24px 70px; background: #022; color: #9ff; border: 2px solid #3cf; cursor: pointer; box-shadow: 0 0 24px #0af6; }
+  #vrbutton:hover:not(:disabled) { background: #044; color: #fff; }
+  #vrbutton:disabled { opacity: .45; cursor: default; box-shadow: none; }
+  #xrnote { margin: 18px 0 0; min-height: 1em; color: #ffcc66; font-size: 15px; }
+  /* Hidden test-only desktop UI (?test). */
+  #hud, #message, #crosshint, #gear { display: none; }
+  body.test #hud, body.test #message, body.test #crosshint, body.test #gear { display: block; }
+  body.in-vr #hud, body.in-vr #message, body.in-vr #crosshint, body.in-vr #gear { display: none; }
+  #crosshint { position: fixed; right: 12px; top: 10px; font-size: 12px; color: #4a8fa3; pointer-events: none; text-align: right; }
+  #gear { position: fixed; left: 12px; top: 10px; font: bold 14px monospace; padding: 6px 12px; background: #022; color: #9ff; border: 1px solid #3cf; cursor: pointer; z-index: 5; }
+  #settings { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(0,10,22,.94); border: 1px solid #3cf; padding: 18px 24px; z-index: 6; box-shadow: 0 0 30px #0af4; }
+  #settings.hidden { display: none; }
+  #settings h2 { margin: 0 0 12px; letter-spacing: 6px; color: #9ff; }
+  #settings label { display: flex; justify-content: space-between; gap: 24px; margin: 8px 0; color: #bfefff; font-size: 15px; }
+  #settings select { font: 15px monospace; background: #012; color: #ffcc66; border: 1px solid #3cf; }
+  #settings button { margin-top: 10px; font: bold 15px monospace; padding: 6px 16px; background: #022; color: #9ff; border: 1px solid #3cf; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<canvas id="hud" width="512" height="160"></canvas>
+<div id="message"><div class="t"></div><div class="s"></div></div>
+<div id="flash"></div>
+<div id="crosshint">TEST MODE &middot; Enter start &middot; L lobby &middot; T tutorial &middot; N mode &middot; mouse steers &middot; click shoots &middot; Shift boost &middot; Tab settings</div>
+<button id="gear">&#9881; Settings (Tab)</button>
+<div id="settings" class="hidden">
+  <h2>SETTINGS</h2>
+  <div id="settings-rows"></div>
+  <button id="settings-close">Close (Tab)</button>
+</div>
+<div id="enter">
+  <div class="box">
+    <h1>BATTLE ROOM</h1>
+    <p class="tag">A TABLETOP SPACE BATTLE FOR META QUEST</p>
+    <button id="vrbutton" disabled>ENTER VR</button>
+    <p id="xrnote"></p>
+  </div>
+</div>
+<!-- recording build hooks -->
+<script>window.__CRREC = {"version":"v5","slug":"5-endless","title":"Endless mode (current build)","date":"2026-11-24","commit":"d104307 (v32)","shots":["Lobby: pick ENDLESS, watch the Endless preview behind the ring.","Start: fly out from the start, follow the long direction arrows to the first red star.","Destroy an enemy outpost - get the shockwave, flicker, collapse to grey and the big boom.","Fly a landing approach onto the cleared star; pick an upgrade on the popup, then LAUNCH.","Fly through a drifting asteroid field.","Buy extra fighters at a green star and fight with the bigger fleet; split it with left stick click.","Play until you lose ships for good, then compare with a quick Fighter round."],"index":"../"};</script>
+<script type="module" src="rec/recorder.js?b=mwvg4112"></script>
+<script type="module" src="js/main.js?v=32"></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+// First-run tutorial: one idea per step, on one card that always looks the same:
+//   section + progress bar / which hand / short title / one line / big animated icon / status.
+// The button to use also glows on the controller you hold. Each step waits for you to do it, shows a
+// short "NICE!" beat, then fades calmly into the next. Info steps go on with the NEXT button on the card.
+// Three parts: ROOM, FLY, SQUADRON; then the lobby. G is the game API from main.js.
+import { Panel, drawIcon, HAND_COLOR, HI, UI } from './ui.js?v=18';
+
+const READ = 1.2;          // seconds before an action counts (time to read the card)
+const NICE = 1.5;          // the "NICE!" beat
+const FADE = 0.45;         // fade out / in between steps
+const SECTIONS = ['ROOM', 'FLY', 'SQUADRON'];
+
+export function createTutorial(G) {
+  const card = new Panel(0.5, 760, 800);
+  const big = new Panel(0.42, 640, 128);
+  // Drawn early with depth testing: ships and stars in front of the card always show over it.
+  for (const P of [card, big]) { P.mesh.material.depthTest = true; P.mesh.renderOrder = -1; }
+  let idx = -1, t = 0, phase = 'in', pt = 0, acc = 0, shots0 = 0, redraw = 0, n0 = 0;
+  let lastFwd = null, turned = 0, box0 = null, rolls0 = 0, form0 = 0;
+  const held = (dt, cond) => { acc = cond ? acc + dt : 0; return acc; };
+  const steerName = () => G.settings.steer;
+  // Steering instructions follow the steering style you picked.
+  const steerVerb = () => ({ mirror: 'Turn right hand', relative: 'Tilt right hand', point: 'Point right hand', stick: 'Push right stick' })[steerName()] || 'Turn right hand';
+  const steerLine = (why) => () => steerVerb() + ': ' + why;
+  const steerIcon = () => ({ mirror: 'mirror', relative: 'relative', point: 'point', stick: 'stick' })[steerName()] || 'mirror';
+  const steerHi = () => (steerName() === 'stick' ? ['stick'] : ['body']);
+  const moved = () => (box0 ? Math.hypot(G.box.x - box0.x, G.box.y - box0.y, G.box.z - box0.z) : 0);
+  const kills = (n) => () => [Math.max(0, n - G.enemyCount()), n];
+  const steps = [
+    // ROOM
+    { id: 'welcome', sect: 'ROOM', stage: 'box', title: 'YOUR BATTLE ROOM', line: 'Your battles happen in this box', icon: 'room', info: true },
+    { id: 'move', sect: 'ROOM', hand: 'either', title: 'MOVE THE ROOM', line: 'Hold grip + move hand: move it', icon: 'gripMove', hi: { right: ['grip'], left: ['grip'] },
+      enter: () => { box0 = { ...G.box }; }, check: () => moved() > 0.08, meter: () => [Math.min(1, moved() / 0.08), 1] },
+    { id: 'resize', sect: 'ROOM', hand: 'either', title: 'RESIZE THE ROOM', line: 'Hold grip + push stick: resize', icon: 'gripResize', hi: { right: ['grip', 'stick'], left: ['grip', 'stick'] },
+      enter: () => { box0 = { ...G.box }; }, check: () => Math.abs(G.box.size - box0.size) > 0.12, meter: () => [Math.min(1, Math.abs(G.box.size - box0.size) / 0.12), 1] },
+    // FLY
+    { id: 'steer', sect: 'FLY', stage: 'fly', hand: 'right', title: 'STEER YOUR SHIP', line: steerLine('steer'), icon: steerIcon, hi: () => ({ right: steerHi() }),
+      check: () => turned > 2.0, meter: () => [Math.min(1, turned / 2.0), 1] },
+    { id: 'styles', sect: 'FLY', hand: 'right', title: 'STEERING STYLE', line: 'Tap a style to try it', choice: true, info: true },
+    { id: 'shoot', sect: 'FLY', hand: 'right', title: 'SHOOT', line: 'Pull right trigger: shoot', icon: 'trigger', hi: { right: ['trigger'] },
+      enter: () => { shots0 = G.shots; }, check: () => G.shots - shots0 >= 8, meter: () => [Math.min(8, G.shots - shots0), 8] },
+    { id: 'boost', sect: 'FLY', hand: 'right', title: 'BOOST', line: 'Hold right grip: fly faster', icon: 'boost', hi: { right: ['grip'] },
+      check: (dt) => held(dt, G.input.boost) > 1.5, meter: () => [Math.min(1.5, acc), 1.5] },
+    { id: 'roll', sect: 'FLY', hand: 'right', title: 'BARREL ROLL', line: 'Flick right wrist sideways: roll', icon: 'roll', hi: { right: ['body'] },
+      enter: () => { rolls0 = G.rolls; }, check: () => G.rolls > rolls0 },
+    { id: 'target', sect: 'FLY', stage: 'enemy', hand: 'right', title: 'DESTROY THE TARGET', line: 'Steer at it + trigger: destroy it', icon: 'target', hi: { right: ['trigger'] },
+      enter: () => G.spawnTut('practice', 1), check: () => G.enemyCount() === 0, meter: kills(1) },
+    { id: 'three', sect: 'FLY', hand: 'right', title: 'THREE MORE', line: "Same again. They can't hurt you", icon: 'target', hi: { right: ['trigger'] },
+      enter: () => G.spawnTut('practice', 3), check: () => G.enemyCount() === 0, meter: kills(3) },
+    // SQUADRON
+    { id: 'squad', sect: 'SQUADRON', stage: 'squadron', title: 'YOUR SQUADRON', line: '4 fighters follow where you steer', icon: 'squad', info: true },
+    { id: 'sqSteer', sect: 'SQUADRON', hand: 'right', title: 'LEAD THEM', line: steerLine('lead them'), icon: steerIcon, hi: () => ({ right: steerHi() }),
+      check: () => turned > 1.8, meter: () => [Math.min(1, turned / 1.8), 1] },
+    { id: 'sqEngage', sect: 'SQUADRON', hand: 'right', title: 'ATTACK', line: 'Hold right trigger: they attack', icon: 'engage', hi: { right: ['trigger'] },
+      enter: () => G.spawnTut('squad', 3), check: (dt) => held(dt, G.input.fire) > 2.0, meter: () => [Math.min(2, acc), 2] },
+    { id: 'sqRegroup', sect: 'SQUADRON', hand: 'right', title: 'REGROUP', line: 'Let go of trigger: they regroup', icon: 'regroup', hi: { right: ['trigger'] },
+      check: (dt) => held(dt, !G.input.fire) > 1.5, meter: () => [Math.min(1.5, acc), 1.5] },
+    { id: 'sqClear', sect: 'SQUADRON', hand: 'right', title: 'FINISH THEM', line: 'Hold trigger until all are gone', icon: 'engage', hi: { right: ['trigger'] },
+      enter: () => { if (!G.enemyCount()) G.spawnTut('squad', 2); n0 = G.enemyCount(); }, check: () => G.enemyCount() === 0, meter: () => [n0 - G.enemyCount(), n0] },
+    { id: 'split', sect: 'SQUADRON', hand: 'left', title: 'SPLIT THE SQUADRON', line: 'Click left stick: split in 2 pairs', icon: 'split', hi: { left: ['stickClick'] },
+      check: () => G.split },
+    { id: 'leadB', sect: 'SQUADRON', hand: 'left', title: 'LEAD THE GOLD PAIR', line: 'Turn left hand: steer the gold pair', icon: 'leadGold', hi: { left: ['body'] },
+      track: () => G.cmdB.fwd, check: () => G.split && turned > 1.5, meter: () => [Math.min(1, turned / 1.5), 1],
+      hint: () => (G.split ? '' : 'Click the left stick to split again') },
+    { id: 'rejoin', sect: 'SQUADRON', hand: 'left', title: 'REJOIN', line: 'Click left stick again: rejoin', icon: 'rejoin', hi: { left: ['stickClick'] },
+      check: () => !G.split },
+    { id: 'formation', sect: 'SQUADRON', hand: 'right', title: 'FORMATIONS', line: 'Press B: line, wedge or ring', icon: 'formation', hi: { right: ['btn2'] },
+      enter: () => { form0 = G.formChanges; }, check: () => G.formChanges > form0 },
+    { id: 'done', sect: 'SQUADRON', title: 'TRAINING COMPLETE', line: 'Press TO LOBBY to pick a mode', icon: 'check', info: true, last: true },
+  ];
+  const val = (v) => (typeof v === 'function' ? v() : v);
+
+  function go(i) {
+    idx = i; t = 0; pt = 0; phase = 'in'; acc = 0; turned = 0; lastFwd = null;
+    const st = steps[i];
+    if (!st) { finish(); return; }
+    if (st.stage) G.stage(st.stage);
+    if (st.enter) st.enter();
+    card.visible = true;
+    big.visible = false;
+    card.hover = null; big.hover = null;
+    G.highlight(val(st.hi) || {});
+    G.cue();
+    draw();
+    G.log('tutorial step ' + (i + 1) + ' ' + st.id);
+  }
+  function finish() {
+    card.visible = false; big.visible = false; idx = -1;
+    G.highlight({});
+    G.finishTutorial();
+  }
+  function complete() {
+    if (phase !== 'show' && phase !== 'in') return;
+    const st = steps[idx];
+    phase = st.info ? 'out' : 'done'; pt = 0;      // info steps: no "nice", just move on
+    G.highlight({});
+    if (!st.info) G.good(); else G.ping();
+    draw();
+  }
+  // NEXT on the card: works on info steps, and once an action step is done (skips the rest of the pause).
+  const nextReady = () => { const st = steps[idx]; return st && (st.info ? phase === 'show' && t > 0.6 : phase === 'done'); };
+  card.onClick = (id) => {
+    if (id === 'next' && nextReady()) { const st = steps[idx]; if (st.info) complete(); else { phase = 'out'; pt = 0; G.ping(); } }
+    else if (id === 'skip') finish();
+    else if (id.startsWith('steer:')) { G.setSetting('steer', id.slice(6)); draw(); }
+  };
+  big.onClick = (id) => { if (id === 'continue') complete(); };
+
+  function header(st) {
+    const W = card.W;
+    card.text(st.sect, 30, 46, { size: 30, bold: true, color: UI.text });
+    card.text(`${idx + 1} / ${steps.length}`, W - 30, 46, { size: 30, color: UI.text, align: 'right' });
+    const g = card.g, x0 = 30, w = W - 60;
+    g.fillStyle = 'rgba(80,220,255,0.15)'; g.fillRect(x0, 64, w, 8);
+    g.fillStyle = 'rgba(80,220,255,0.85)'; g.fillRect(x0, 64, w * ((idx + (phase === 'done' || phase === 'out' ? 1 : 0)) / steps.length), 8);
+    // Section ticks.
+    for (const s of SECTIONS) {
+      const first = steps.findIndex((x) => x.sect === s);
+      if (first > 0) { g.fillStyle = 'rgba(0,10,22,1)'; g.fillRect(x0 + (w * first) / steps.length - 2, 62, 4, 12); }
+    }
+  }
+  function draw() {
+    const st = steps[idx];
+    if (!st) return;
+    const g = card.g, W = card.W, H = card.H;
+    const tt = performance.now() / 1000;
+    const finished = phase === 'done' || (phase === 'out' && !st.info);
+    card.begin();
+    header(st);
+    // Which hand (always the same spot, in that hand's colour).
+    if (st.hand) {
+      const lab = { right: 'RIGHT HAND', left: 'LEFT HAND', either: 'EITHER HAND' }[st.hand];
+      const col = HAND_COLOR[st.hand];
+      g.strokeStyle = col; g.lineWidth = 3;
+      g.beginPath(); g.roundRect(W / 2 - 170, 88, 340, 56, 28); g.stroke();
+      card.text(lab, W / 2, 127, { size: 32, bold: true, color: col, align: 'center', maxW: 310 });
+    }
+    card.text(st.title, W / 2, 212, { size: 58, bold: true, color: UI.title, align: 'center', maxW: W - 50 });
+    card.text(val(st.line), W / 2, 266, { size: 38, color: '#e6fbff', align: 'center', maxW: W - 40 });
+    if (finished) drawIcon(g, 'check', W / 2, 440, 300, tt);
+    else if (st.choice) {
+      drawIcon(g, steerIcon(), W / 2, 345, 150, tt, 'right');
+      const modes = [['mirror', 'MIRROR'], ['relative', 'RELATIVE'], ['point', 'POINT'], ['stick', 'STICK']];
+      modes.forEach(([k, l], n) => card.button('steer:' + k, n % 2 ? W / 2 + 8 : W / 2 - 348, 420 + Math.floor(n / 2) * 92, 340, 80, l, { active: steerName() === k, size: 36 }));
+    } else drawIcon(g, val(st.icon), W / 2, 445, 300, tt, st.hand === 'left' ? 'left' : 'right');
+    // Status line: NICE! / progress / continue / hint.
+    if (finished) card.text('NICE!', W / 2, 640, { size: 56, bold: true, color: HI, align: 'center' });
+    else if (st.info) { /* NEXT below says it all */ } else {
+      const h = st.hint ? st.hint() : '';
+      if (h) card.text(h, W / 2, 640, { size: 32, color: UI.gold, align: 'center', maxW: W - 60 });
+      else if (st.meter) {
+        const [a, b] = st.meter();
+        const f = b ? Math.max(0, Math.min(1, a / b)) : 0;
+        g.strokeStyle = 'rgba(80,220,255,0.5)'; g.lineWidth = 2; g.strokeRect(150, 606, W - 300, 26);
+        g.fillStyle = HI; g.fillRect(153, 609, (W - 306) * f, 20);
+        if (b > 1 && Number.isInteger(b)) card.text(`${Math.floor(a)} / ${b}`, W - 140, 628, { size: 24, color: UI.dim });
+      }
+    }
+    // NEXT: always in the same spot. Lit (and pulsing) when you can press it; dim while the step
+    // is waiting for you to do something.
+    const nx = W / 2 - 170, ny = 680, nw = 340, nh = 92;
+    const label = st.last ? 'TO LOBBY ▶' : 'NEXT ▶';
+    if (nextReady()) {
+      const k = 0.5 + 0.5 * Math.sin(tt * 5);
+      g.strokeStyle = `rgba(255,204,102,${0.25 + 0.35 * k})`; g.lineWidth = 6; g.strokeRect(nx - 6, ny - 6, nw + 12, nh + 12);
+      card.button('next', nx, ny, nw, nh, label, { big: true, active: true, size: 44 });
+    } else {
+      g.strokeStyle = 'rgba(80,220,255,0.35)'; g.lineWidth = 2; g.strokeRect(nx + 1, ny + 1, nw - 2, nh - 2);
+      card.text(label, W / 2, ny + nh / 2 + 15, { size: 40, color: 'rgba(95,169,191,0.7)', align: 'center' });
+    }
+    card.button('skip', 12, H - 52, 186, 44, 'skip tutorial', { size: 24, subtle: true });
+    card.end();
+  }
+
+  function update(dt) {
+    const st = steps[idx];
+    if (!st) return;
+    t += dt; pt += dt;
+    // How far the commanded heading has turned (for the steering steps).
+    const tv = st.track ? st.track() : G.player.fwd;
+    if (lastFwd) turned += lastFwd.angleTo(tv);
+    lastFwd = (lastFwd || tv.clone()).copy(tv);
+    let op = 1;
+    if (phase === 'in') { op = Math.min(1, pt / FADE); if (pt >= FADE) { phase = 'show'; pt = 0; } }
+    if (phase === 'show') {
+      // Actions only count once you've had a moment to read the card.
+      if (!st.info && st.check) { const ok = st.check(dt); if (ok && t > READ + FADE) complete(); }
+    } else if (phase === 'done') {
+      if (pt > NICE) { phase = 'out'; pt = 0; }
+    } else if (phase === 'out') {
+      op = Math.max(0, 1 - pt / FADE);
+      if (pt > FADE + 0.25) { go(idx + 1); return; }
+    }
+    card.mesh.material.opacity = op;
+    big.mesh.material.opacity = op;
+    redraw -= dt;
+    if (redraw <= 0) { redraw = 1 / 20; draw(); }
+  }
+
+  return {
+    card, big, steps,
+    start() { go(0); },
+    update,
+    stop() { card.visible = false; big.visible = false; idx = -1; G.highlight({}); },
+    get step() { return steps[idx] ? steps[idx].id : null; },
+    get index() { return idx; },
+    get phase() { return idx >= 0 ? phase : null; },
+    get active() { return idx >= 0; },
+    redraw: draw,
+  };
+}

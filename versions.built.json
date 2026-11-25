@@ -1,0 +1,95 @@
+[
+  {
+    "slug": "1-first",
+    "version": "v1",
+    "commit": "ff79fa7",
+    "gameVersion": "first prototype",
+    "date": "2026-11-21",
+    "title": "First playable prototype",
+    "new": "Day one. You sit in the middle of a 360-degree wireframe battle. Point the right controller and the cyan ship flies there; red fighters and cruisers come in waves from every side. Score and radar on your left wrist.",
+    "shots": [
+      "Before starting: look slowly all the way round the empty arena - stars, the grid below, the horizon ring (20 s).",
+      "Pull the RIGHT TRIGGER to start. First flight: point the right controller and fly one slow lap around your head.",
+      "Shoot 3 enemies (trigger). Try to get one explosion close to your face.",
+      "Hold GRIP to boost across the arena, pull the stick back to brake.",
+      "Raise your left wrist and read the score and radar.",
+      "Fly straight into a cruiser on purpose / take hits until SHIP DESTROYED, then restart with the trigger.",
+      "Use the left stick to drift your viewpoint through the battle for a few seconds.",
+      "Play 2-3 more waves normally to finish the 5-10 minutes."
+    ]
+  },
+  {
+    "slug": "2-squadron",
+    "version": "v2",
+    "commit": "954063d",
+    "gameVersion": "v9",
+    "date": "2026-11-22",
+    "title": "Tabletop battle box + Squadron mode",
+    "new": "The battle moved onto a tabletop box in front of you, with Mirror steering (the ship points where your controller points, full loops, no pitch limit). New Squadron mode: command 4 bot fighters among wireframe stars. Smarter enemies in pincers, flankers and snipers.",
+    "shots": [
+      "Lean in close to the battle box and look at it from the side and from above (20 s).",
+      "Fighter mode, RIGHT TRIGGER to start: Mirror steering - fly a full loop and a tight turn.",
+      "Shoot down a full wave; boost with GRIP, brake with A.",
+      "Take hits until SHIP DESTROYED, then press B on the title to switch to SQUADRON.",
+      "Squadron: steer the squad with the right controller, HOLD TRIGGER to engage, release to regroup.",
+      "Fly the squad round a wireframe star so enemies lose sight of you.",
+      "Lose a wingman (WINGMAN DOWN), then keep playing to the end of a wave.",
+      "Left thumbstick click: reset the box in front of you once."
+    ]
+  },
+  {
+    "slug": "3-lobby-music",
+    "version": "v3",
+    "commit": "998082f",
+    "gameVersion": "v18",
+    "date": "2026-11-23",
+    "title": "Lobby, tutorial, music and juice",
+    "new": "A real game now: ENTER VR lands in a lobby with a live battle behind the menu, a step-by-step tutorial, procedural music and new sound effects. Explosions got sparks, flash rings and hit stop. Squadron can split into two pairs (one per hand) and change formation; enemies have leaders and aces; fighters can barrel-roll.",
+    "shots": [
+      "Lobby: let the music play and watch the live backdrop battle for 15 s, look at the panels.",
+      "Run the first few tutorial steps (move / resize the room, steering), then skip or finish it.",
+      "Fighter: start a game, do a wrist-flick barrel roll to dodge bullets.",
+      "Get a kill streak - show the spark bursts, flash rings and the hit-stop freeze.",
+      "Find an ACE (gold) and chase it down.",
+      "Squadron: left stick click to SPLIT into two pairs, steer one with each hand, press B to change formation.",
+      "Rejoin the squadron and finish a wave.",
+      "Back to the lobby: open settings, move the music and sound sliders."
+    ]
+  },
+  {
+    "slug": "4-holo-ring",
+    "version": "v4",
+    "commit": "4527bc5",
+    "gameVersion": "v27",
+    "date": "2026-11-24",
+    "title": "Command deck: holo ring, pointer UI, stats",
+    "new": "The menus became a command deck: a holographic ring above the battle room, laser-pointer UI with a cursor, Settings sliding in on the left, a new STATS panel on the right. The lobby backdrop follows the selected mode with a cross-fade. Thousands separators, screen-time stats, gentler panels.",
+    "shots": [
+      "Lobby: look up at the holo ring, sweep the laser pointer across the buttons so the cursor shows.",
+      "Switch modes Fighter <-> Squadron and let the backdrop cross-fade.",
+      "Open SETTINGS (slides in left) and STATS (slides in right), scroll through, close them.",
+      "Start Fighter: one full round, fly close to the ring edge so ships pass in front of it.",
+      "Start Squadron: split, formations, focus fire on a leader.",
+      "Lose on purpose and show the game-over score with thousands separators.",
+      "Grip-drag the room to make it bigger or move it, then play one more round."
+    ]
+  },
+  {
+    "slug": "5-endless",
+    "version": "v5",
+    "commit": "d104307",
+    "gameVersion": "v32",
+    "date": "2026-11-24",
+    "title": "Endless mode (current build)",
+    "new": "Third mode, Endless: an open seeded galaxy around your ship. Enemy outposts are red stars, friendly ones green; destroy outposts (shockwave, collapse, big boom), land on cleared or green stars for upgrades, repair and new fighters, then launch again. Drifting asteroid fields, tiers rising with distance, no fleet cap.",
+    "shots": [
+      "Lobby: pick ENDLESS, watch the Endless preview behind the ring.",
+      "Start: fly out from the start, follow the long direction arrows to the first red star.",
+      "Destroy an enemy outpost - get the shockwave, flicker, collapse to grey and the big boom.",
+      "Fly a landing approach onto the cleared star; pick an upgrade on the popup, then LAUNCH.",
+      "Fly through a drifting asteroid field.",
+      "Buy extra fighters at a green star and fight with the bigger fleet; split it with left stick click.",
+      "Play until you lose ships for good, then compare with a quick Fighter round."
+    ]
+  }
+]
