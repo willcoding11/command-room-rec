@@ -54,6 +54,12 @@ export function buildDirector({ frames, readFrame, defs, T0, duration, log, seed
       if (!seen.has(id)) { seen.add(id); if (!c || !c.small) spawns.push({ t, p: V(x.p) }); }
     }
   }
+  // Transforms are logged on change only: carry a still object's last pose to the end of the log.
+  const tLogEnd = frames.length ? frames[frames.length - 1].t - T0 : duration;
+  for (const c of objs.values()) {
+    const last = c.samples[c.samples.length - 1], lastVis = c.vis[c.vis.length - 1];
+    if (last && last[0] < tLogEnd - 0.05 && !(lastVis && lastVis[1] === 0)) c.samples.push([tLogEnd, ...last.slice(1)]);
+  }
   let ships = [];
   const bigs = [], pulsers = [];
   for (const c of objs.values()) {
@@ -64,10 +70,14 @@ export function buildDirector({ frames, readFrame, defs, T0, duration, log, seed
     if (smax <= 0) continue;
     c.r = c.r0 * smax; c.rMin = c.r0 * smin;
     const ratio = smax / Math.max(smin, 1e-9);
-    if (ratio > 1.3) { if (ratio < 2 && c.r0 >= 0.35) pulsers.push(c); continue; }   // shock spheres; pulsing stars
+    if (ratio > 1.3 && c.player && c.small) {   // the player's ship may scale (launch / landing): use its typical size
+      const ss = c.samples.map((s) => s[8]).sort((a, b) => a - b); c.r = c.r0 * ss[Math.floor(ss.length / 2)];
+    } else if (ratio > 1.3) { if (ratio < 2 && c.r0 >= 0.35) pulsers.push(c); continue; }   // shock spheres; pulsing stars
     const col = new THREE.Color(c.color);
     // Ships are small models that move; drifting rocks (model radius >= ~0.5) are scenery.
-    if (c.small && c.r0 < 0.35 && c.samples.length >= 15 && path > 4 * c.r) {
+    // The player's ship always counts, even when it barely moves (Endless scrolls the galaxy past it).
+    const isPlayerHull = c.player && c.def.type === 'LineSegments' && c.r0 < 0.35 && !ships.some((s) => s.player);
+    if (c.small && c.r0 < 0.35 && (isPlayerHull || (c.samples.length >= 15 && path > 4 * c.r))) {
       c.enemy = col.r > col.g * 1.3 && col.r > col.b * 1.3;
       ships.push(c);
     } else bigs.push(c);
@@ -79,12 +89,16 @@ export function buildDirector({ frames, readFrame, defs, T0, duration, log, seed
   const box = new THREE.Box3();
   for (const s of ships) for (let i = 0; i < s.samples.length; i += 4) box.expandByPoint(V(s.samples[i].slice(1, 4)));
   if (box.isEmpty()) box.setFromCenterAndSize(new THREE.Vector3(0, 1, -1), new THREE.Vector3(1, 1, 1));
+  // Few or static ships (an Endless cruise): the action space is at least ~50 ship radii across.
+  { const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3()), m = 50 * rMed;
+    box.setFromCenterAndSize(c, new THREE.Vector3(Math.max(sz.x, m), Math.max(sz.y, m * 0.6), Math.max(sz.z, m))); }
   const arenaC = box.getCenter(new THREE.Vector3()), arenaR = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 6 * rMed);
   // Occluders: big, solid-looking things inside the arena (Squadron / Endless stars, asteroids). Not the room frame.
   // Scenery = persistent wireframe bodies; not effects (one-shot kill rings), not things carried by the player ship.
   const scenery = (b) => b.def.type === 'LineSegments' && !b.player && !(b.samples.length <= 2 && b.samples[0][0] > 0.5);
   const occ = bigs.concat(pulsers.filter((b) => b.rMin > rMed * 2)).filter((b) => scenery(b) && b.r0 < 1 && b.r < arenaR * 0.6 && b.r > rMed * 2);
   const clut = bigs.concat(pulsers.filter((b) => b.rMin > rMed * 1.5)).filter((b) => scenery(b) && b.r < arenaR * 0.95 && b.r > rMed * 1.5);
+  if (/dbg=3/.test(location.search)) for (const c of objs.values()) if (c.small && c.samples.length) { let path = 0; for (let i = 1; i < c.samples.length; i++) { const a = c.samples[i - 1], b = c.samples[i]; path += Math.hypot(b[1] - a[1], b[2] - a[2], b[3] - a[3]); } log(`small ${c.id} ${c.def.type} ${c.def.name || ''} r0=${c.r0.toFixed(2)} s=${c.samples[0][8].toFixed(4)} n=${c.samples.length} path=${path.toFixed(3)} vis=${c.vis.length} col=${c.color.toString(16)} anc=${(c.def.anc || []).join('/')} ship=${ships.includes(c)}`); }
   if (/dbg/.test(location.search)) for (const o of new Set([...occ, ...clut])) log(`occ/clut ${o.id} ${o.def.type} r0=${o.r0.toFixed(2)} r=${o.r.toFixed(3)} rMin=${(o.rMin || 0).toFixed(3)} pulser=${pulsers.includes(o)} n=${o.samples.length} t0=${o.samples[0][0].toFixed(1)} vis=${o.vis.length} p=${o.samples[0].slice(1, 4).map((x) => x.toFixed(2))}`);
   if (/dbg=2/.test(location.search)) for (const d of defs) if (d.k === 'obj' && (!d.layer || d.layer === 'world')) { const r = geoRadius(d.geo); if (r > 0.1) log(`big ${d.id} ${d.type} ${d.name || ''} r0=${r.toFixed(2)} anc=${(d.anc || []).join('/')} inObjs=${objs.has(d.id)} clut=${clut.some((c) => c.id === d.id)}`); }
   const arenaBig = box.clone().expandByScalar(box.getSize(new THREE.Vector3()).length() * 0.06);
@@ -252,7 +266,7 @@ export function buildDirector({ frames, readFrame, defs, T0, duration, log, seed
     const sizeScore = shot.type === 'wide' ? 0 : Math.min(1, avgSize / 0.2);
     // A subject that barely moves makes a dead shot.
     const speed = pos(s, shot.t0).distanceTo(pos(s, Math.min(shot.t1, lastTime(s)))) / Math.max(0.5, shot.t1 - shot.t0) / s.r;
-    const motion = shot.kill ? 1 : Math.min(1, 0.4 + speed / 6);
+    const motion = shot.kill || s.player ? 1 : Math.min(1, 0.4 + speed / 6);
     return vis * (0.75 + 0.25 * sizeScore) * motion - bad * 0.08;
   }
 

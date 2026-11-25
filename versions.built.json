@@ -80,7 +80,7 @@
     "commit": "d104307",
     "gameVersion": "v32",
     "date": "2026-11-24",
-    "title": "Endless mode (current build)",
+    "title": "Endless mode",
     "new": "Third mode, Endless: an open seeded galaxy around your ship. Enemy outposts are red stars, friendly ones green; destroy outposts (shockwave, collapse, big boom), land on cleared or green stars for upgrades, repair and new fighters, then launch again. Drifting asteroid fields, tiers rising with distance, no fleet cap.",
     "shots": [
       "Lobby: pick ENDLESS, watch the Endless preview behind the ring.",
@@ -90,6 +90,26 @@
       "Fly through a drifting asteroid field.",
       "Buy extra fighters at a green star and fight with the bigger fleet; split it with left stick click.",
       "Play until you lose ships for good, then compare with a quick Fighter round."
+    ]
+  },
+  {
+    "slug": "6-command-room",
+    "version": "v6",
+    "commit": "07bb167",
+    "gameVersion": "v33",
+    "date": "2026-11-24",
+    "title": "COMMAND ROOM: upgrade cards, bounties, treasure ship",
+    "new": "The game is renamed COMMAND ROOM. Endless got harder and much richer: every cleared outpost offers 3 upgrade cards from a pool of 14 in four colour-coded rarities (spread shot, shields, homing missiles...), bought with credits that drift out of wrecks as gold sparks. Gold bounty outposts, roaming patrols, a fleeing gold treasure ship, combos, distance milestones, music that reacts, tumbling asteroid fields you see from afar, and a threat ramp so every run ends.",
+    "shots": [
+      "Lobby: show the new COMMAND ROOM title, pick ENDLESS and let the preview play behind the ring (10 s).",
+      "Launch and fly straight into the asteroid field just behind the start - get rocks tumbling past close to the view.",
+      "Clear the first red outpost, then pick up the gold credit sparks drifting out of the wrecks (fly through them).",
+      "Land on the cleared star: show the 3 upgrade cards with their rarity colours, buy one or two, then LAUNCH. Raise the left wrist to show the UPG row.",
+      "Chain kills quickly for a combo (x3 and up) and catch a distance milestone celebration.",
+      "When the gold treasure ship appears, chase it down before it escapes (6-10 s) - the money shot.",
+      "Find a gold BOUNTY outpost and take it on: tougher defenders, double credits, rarer cards.",
+      "Fight off a roaming patrol that comes after you between outposts.",
+      "Keep going until the threat ramp wins and the run ends - show the final distance and score screen."
     ]
   }
 ]

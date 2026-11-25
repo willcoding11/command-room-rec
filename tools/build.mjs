@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds the 5 recording snapshots + the root index from versions.json.
+// Builds the recording snapshots + the root index from versions.json.
 //   node tools/build.mjs <path-to-vr-battle-room-git-repo>
 // Each snapshot = `git archive <commit> index.html js vendor`, plus rec/recorder.js and three tiny hooks:
 //   index.html: window.__CRREC config + <script type="module" src="rec/recorder.js"> before main.js
@@ -80,7 +80,7 @@ summary{cursor:pointer;color:#ffcc66;font-weight:bold;padding:8px 0;font-size:18
 li{margin:4px 0}
 </style></head><body><main>
 <h1>COMMAND ROOM</h1>
-<p class="lead">Recording builds for the devlog: 5 snapshots from the first prototype to today (formerly VR Battle Room). Each one is the game exactly as it was, plus a recorder.</p>
+<p class="lead">Recording builds for the devlog: ${versions.length} snapshots from the first prototype to today (formerly VR Battle Room). Each one is the game exactly as it was, plus a recorder.</p>
 <div class="how"><b>How to record:</b> open a version, press ENTER VR. Recording starts automatically (untick it on the card to start by hand).
 In VR, click <b>both thumbsticks in and hold 1 second</b> to start / stop - a red REC badge shows lower left and the controllers buzz.
 Leaving VR stops and saves. Back on the page, press <b>DOWNLOAD RECORDING</b>: you get <code>commandroom-vN-date-time.zip</code> (scene log + game audio; never the mic).
