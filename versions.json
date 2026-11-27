@@ -95,21 +95,20 @@
   {
     "slug": "6-command-room",
     "version": "v6",
-    "commit": "07bb167",
-    "gameVersion": "v33",
-    "date": "2026-11-24",
-    "title": "COMMAND ROOM: upgrade cards, bounties, treasure ship",
-    "new": "The game is renamed COMMAND ROOM. Endless got harder and much richer: every cleared outpost offers 3 upgrade cards from a pool of 14 in four colour-coded rarities (spread shot, shields, homing missiles...), bought with credits that drift out of wrecks as gold sparks. Gold bounty outposts, roaming patrols, a fleeing gold treasure ship, combos, distance milestones, music that reacts, tumbling asteroid fields you see from afar, and a threat ramp so every run ends.",
+    "commit": "1bd708b",
+    "gameVersion": "v34",
+    "date": "2026-11-26",
+    "title": "COMMAND ROOM: warp drive, enemy homeworld, win the game",
+    "new": "Endless has a goal: past the tier-9 outposts the enemy homeworld appears far out - a huge red star in a wide clearing, defended by three waves of a big fleet; destroy it to win. A warp drive (friendly outposts, after your first outpost win) flies your ships 5x faster in a straight line and drops out near outposts. Gentler difficulty curve, cheaper ships, wireframe credits, calmer upgrade panel, the panel always drawn over the stars, much less text, and a wrist HUD that stays readable with a big fleet.",
     "shots": [
-      "Lobby: show the new COMMAND ROOM title, pick ENDLESS and let the preview play behind the ring (10 s).",
-      "Launch and fly straight into the asteroid field just behind the start - get rocks tumbling past close to the view.",
-      "Clear the first red outpost, then pick up the gold credit sparks drifting out of the wrecks (fly through them).",
-      "Land on the cleared star: show the 3 upgrade cards with their rarity colours, buy one or two, then LAUNCH. Raise the left wrist to show the UPG row.",
-      "Chain kills quickly for a combo (x3 and up) and catch a distance milestone celebration.",
-      "When the gold treasure ship appears, chase it down before it escapes (6-10 s) - the money shot.",
-      "Find a gold BOUNTY outpost and take it on: tougher defenders, double credits, rarer cards.",
-      "Fight off a roaming patrol that comes after you between outposts.",
-      "Keep going until the threat ramp wins and the run ends - show the final distance and score screen."
+      "Lobby: pick ENDLESS and let the preview play behind the ring (10 s).",
+      "Clear the first red outpost: watch the panel pop up as soon as your ships head in to land, and pick up the wireframe credit diamonds.",
+      "Buy the cheap +1 WINGMAN card, then land on a green star: buy two NEW FIGHTERs and the WARP DRIVE.",
+      "Press B to warp: show the ships streaking straight on and swerving round a star, then the automatic WARP DROP near the next outpost.",
+      "Grow the fleet past 10 ships and raise the left wrist: the two-row hull display (past 16: the fleet bar).",
+      "Fight a bounty outpost or a patrol with the bigger squadron.",
+      "If you get past the tier-9 outposts: follow the magenta arrow to the ENEMY HOMEWORLD and take on its waves.",
+      "Destroy the last wave for the VICTORY screen - or play until the run ends and show the final screen."
     ]
   }
 ]
