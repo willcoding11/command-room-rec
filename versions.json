@@ -95,20 +95,20 @@
   {
     "slug": "6-command-room",
     "version": "v6",
-    "commit": "1bd708b",
-    "gameVersion": "v34",
+    "commit": "f31e9af",
+    "gameVersion": "v35",
     "date": "2026-11-26",
-    "title": "COMMAND ROOM: warp drive, enemy homeworld, win the game",
-    "new": "Endless has a goal: past the tier-9 outposts the enemy homeworld appears far out - a huge red star in a wide clearing, defended by three waves of a big fleet; destroy it to win. A warp drive (friendly outposts, after your first outpost win) flies your ships 5x faster in a straight line and drops out near outposts. Gentler difficulty curve, cheaper ships, wireframe credits, calmer upgrade panel, the panel always drawn over the stars, much less text, and a wrist HUD that stays readable with a big fleet.",
+    "title": "COMMAND ROOM: hyperspace warp, smooth steering, enemy homeworld",
+    "new": "Endless has a goal: past the tier-9 outposts the enemy homeworld appears far out; destroy its three waves to win. Warp drive (friendly outposts) with a hyperspace jump effect - streaks, entry and exit bursts, sound - that drops out just before the outpost dead ahead. v35: steering stays smooth when the fleet faces you or you point near straight up / down; patrols break off once you land; easier first tiers; 5 upgrade cards per outpost; down to one ship you fly it as a fighter again.",
     "shots": [
       "Lobby: pick ENDLESS and let the preview play behind the ring (10 s).",
-      "Clear the first red outpost: watch the panel pop up as soon as your ships head in to land, and pick up the wireframe credit diamonds.",
-      "Buy the cheap +1 WINGMAN card, then land on a green star: buy two NEW FIGHTERs and the WARP DRIVE.",
-      "Press B to warp: show the ships streaking straight on and swerving round a star, then the automatic WARP DROP near the next outpost.",
-      "Grow the fleet past 10 ships and raise the left wrist: the two-row hull display (past 16: the fleet bar).",
-      "Fight a bounty outpost or a patrol with the bigger squadron.",
-      "If you get past the tier-9 outposts: follow the magenta arrow to the ENEMY HOMEWORLD and take on its waves.",
-      "Destroy the last wave for the VICTORY screen - or play until the run ends and show the final screen."
+      "Steering: turn the wrist until the fleet faces you, flick it back, and point near straight up - the fleet turns smoothly.",
+      "Clear the first red outpost and show the 5 upgrade cards on the panel; buy the +1 WINGMAN card.",
+      "While landed, let a patrol arrive: it breaks off and leaves.",
+      "Land on a green star: buy two NEW FIGHTERs and the WARP DRIVE, LAUNCH and press B straight away for the hyperspace jump.",
+      "Warp at an outpost dead ahead: the drop-out burst just before it (fly past one off to the side to show it is ignored).",
+      "Lose ships until one is left: it becomes your fighter (Fighter controls).",
+      "If you get past the tier-9 outposts: follow the magenta arrow to the ENEMY HOMEWORLD; destroy the last wave for VICTORY - or play until the run ends."
     ]
   }
 ]
