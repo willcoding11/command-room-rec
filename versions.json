@@ -95,20 +95,20 @@
   {
     "slug": "6-command-room",
     "version": "v6",
-    "commit": "f31e9af",
-    "gameVersion": "v35",
+    "commit": "f866fc6",
+    "gameVersion": "v36",
     "date": "2026-11-26",
-    "title": "COMMAND ROOM: hyperspace warp, smooth steering, enemy homeworld",
-    "new": "Endless has a goal: past the tier-9 outposts the enemy homeworld appears far out; destroy its three waves to win. Warp drive (friendly outposts) with a hyperspace jump effect - streaks, entry and exit bursts, sound - that drops out just before the outpost dead ahead. v35: steering stays smooth when the fleet faces you or you point near straight up / down; patrols break off once you land; easier first tiers; 5 upgrade cards per outpost; down to one ship you fly it as a fighter again.",
+    "title": "COMMAND ROOM: homeworld swarm, warp bubble, win the game",
+    "new": "Endless has a goal: past the tier-9 outposts the enemy homeworld appears far out. v36: it launches one massive swarm (about 70 ships, 12 cruisers) right in front of you; destroy it and the planet breaks apart in slow motion before a VICTORY screen with your run. Warp from the start (B): your ships fly inside a bubble of light streaks. Many more asteroid fields, big credits on the outpost panel, smooth steering, patrols break off when you land, 5 upgrade cards, and down to one ship you fly it as a fighter again.",
     "shots": [
       "Lobby: pick ENDLESS and let the preview play behind the ring (10 s).",
-      "Steering: turn the wrist until the fleet faces you, flick it back, and point near straight up - the fleet turns smoothly.",
-      "Clear the first red outpost and show the 5 upgrade cards on the panel; buy the +1 WINGMAN card.",
+      "Fly off and press B (the B WARP tag on the controller): the warp bubble round your ships, through an asteroid field or two.",
+      "Clear the first red outpost: the 5 upgrade cards and the big credits number - buy a card and watch it count down.",
       "While landed, let a patrol arrive: it breaks off and leaves.",
-      "Land on a green star: buy two NEW FIGHTERs and the WARP DRIVE, LAUNCH and press B straight away for the hyperspace jump.",
-      "Warp at an outpost dead ahead: the drop-out burst just before it (fly past one off to the side to show it is ignored).",
+      "Land on a green star and buy NEW FIGHTERs; grow the fleet.",
       "Lose ships until one is left: it becomes your fighter (Fighter controls).",
-      "If you get past the tier-9 outposts: follow the magenta arrow to the ENEMY HOMEWORLD; destroy the last wave for VICTORY - or play until the run ends."
+      "Past the tier-9 outposts: follow the magenta arrow to the ENEMY HOMEWORLD and take on the swarm.",
+      "Destroy the swarm: the planet breaks apart in slow motion, then VICTORY with the run's numbers."
     ]
   }
 ]

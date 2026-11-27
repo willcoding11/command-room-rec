@@ -214,6 +214,8 @@ function attrArray(a) {
   return a.array;
 }
 
+const TELEPORT = 1.0;   // parent-local units moved in one logged frame that count as a jump, not motion
+
 class Session {
   constructor() {
     this.id = 'rec-' + Date.now().toString(36);
@@ -490,7 +492,17 @@ class Session {
         if (ren && o.material && (Array.isArray(o.material) ? !o.material[0] || !o.material[0].visible : !o.material.visible)) continue;
         const layer = this.classify(o, ctxLayer, cm, underCam);
         if (ren || o.name) {
-          const e = this.obj(o, layer, anc);
+          let e = this.obj(o, layer, anc);
+          // A visible object that jumps (a pooled mesh handed to another star / bullet / effect, a respawn):
+          // record it as a NEW object from here on, so the renderer cuts instead of sliding it across the
+          // scene between the two frames. (Its parent-local position: normal motion is far below this.)
+          if (e.lp && e.lastVis === frame - 1 && Math.abs(o.position.x - e.lp[0]) + Math.abs(o.position.y - e.lp[1]) + Math.abs(o.position.z - e.lp[2]) > TELEPORT) {
+            this.objs.delete(o);
+            e = this.obj(o, layer, anc);
+            this.stats.recycled = (this.stats.recycled || 0) + 1;
+          }
+          if (!e.lp) e.lp = [0, 0, 0];
+          e.lp[0] = o.position.x; e.lp[1] = o.position.y; e.lp[2] = o.position.z;
           e.seen = frame;
           vis.push(e);
           if (ren) {
