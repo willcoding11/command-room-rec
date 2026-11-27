@@ -12,7 +12,7 @@ prototype to today, each with a built-in recorder, for devlog footage on a Meta 
 | 3 | [/3-lobby-music/](https://willcoding11.github.io/command-room-rec/3-lobby-music/) | 998082f | v18 | 2026-11-23 | lobby, tutorial, procedural music, juice (sparks, hit stop), split + formations, aces, barrel roll |
 | 4 | [/4-holo-ring/](https://willcoding11.github.io/command-room-rec/4-holo-ring/) | 4527bc5 | v27 | 2026-11-24 | holo ring command deck, laser-pointer UI, Settings / STATS panels |
 | 5 | [/5-endless/](https://willcoding11.github.io/command-room-rec/5-endless/) | d104307 | v32 (main HEAD when built) | 2026-11-24 | Endless mode: star outposts, landing, upgrades, asteroid fields |
-| 6 | [/6-command-room/](https://willcoding11.github.io/command-room-rec/6-command-room/) | 8cf8118 | v37 (kept in sync with the game) | 2026-11-26 | homeworld swarm + break-up victory, warp flow from the start, more asteroid fields, smooth steering, 5 cards |
+| 6 | [/6-command-room/](https://willcoding11.github.io/command-room-rec/6-command-room/) | 0a6d087 | v38 (kept in sync with the game) | 2026-11-26 | homeworld swarm + break-up victory, warp flow from the start, more asteroid fields, smooth steering, 5 cards |
 
 Each build is `git archive <commit>` of the game, unchanged except for three hooks (see `tools/build.mjs`):
 `index.html` gets the shot-list card config and `<script type="module" src="rec/recorder.js">` before `main.js`;
